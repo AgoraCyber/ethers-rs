@@ -1,3 +1,4 @@
+use ethers_core_rs::utils::hex;
 use jsonrpc_rs::RPCResult;
 
 pub mod providers;
@@ -15,15 +16,30 @@ impl Provider {
         Self { rpc_client }
     }
 
+    /// Returns the number of most recent block.
     pub async fn eth_block_number(&mut self) -> RPCResult<u64> {
-        let block_number: u64 = self.rpc_client.call("eth_blockNumber", ()).await?;
+        let block_number: String = self
+            .rpc_client
+            .call("eth_blockNumber", Vec::<String>::new())
+            .await?;
 
-        Ok(block_number)
+        Ok(hex::hex_to_integer(&block_number).map_err(jsonrpc_rs::map_error)?)
+    }
+
+    /// Returns the chain ID of the current network
+    pub async fn eth_chain_id(&mut self) -> RPCResult<u64> {
+        let block_number: String = self
+            .rpc_client
+            .call("eth_chainId", Vec::<String>::new())
+            .await?;
+
+        Ok(hex::hex_to_integer(&block_number).map_err(jsonrpc_rs::map_error)?)
     }
 }
 
 #[cfg(test)]
 mod tests {
+
     use jsonrpc_rs::RPCResult;
 
     use crate::providers::http;
@@ -32,11 +48,24 @@ mod tests {
     async fn test_block_number() -> RPCResult<()> {
         _ = pretty_env_logger::try_init();
 
-        let mut provider = http::connect_to("https://data-seed-prebsc-1-s1.binance.org:8545");
+        let mut provider = http::connect_to("http://localhost:7545");
 
         let block_number = provider.eth_block_number().await?;
 
         log::debug!("block number {}", block_number);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_chain_id() -> RPCResult<()> {
+        _ = pretty_env_logger::try_init();
+
+        let mut provider = http::connect_to("http://localhost:7545");
+
+        let block_number = provider.eth_chain_id().await?;
+
+        log::debug!("chain_id {}", block_number);
 
         Ok(())
     }

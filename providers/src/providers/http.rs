@@ -7,7 +7,7 @@ use reqwest::header::{HeaderValue, CONTENT_TYPE};
 
 use crate::Provider;
 
-use super::channel::ProviderChannel;
+use super::channel::TokioProviderChannel;
 
 /// Use http/https protocol connect to ethereum node.
 ///
@@ -21,14 +21,14 @@ pub fn connect_to<S: AsRef<str> + Clone + Send + 'static + Sync>(url: S) -> Prov
     let (dispatcher_output, client_input) = mpsc::channel::<RPCResult<String>>(20);
 
     // Create mpsc transport, real send/recv network message are in procedure dispatcher.
-    let client_transport = ProviderChannel {
+    let client_transport = TokioProviderChannel {
         receiver: client_input,
         sender: client_output,
     };
 
     let dispatcher_url = url.clone();
 
-    ProviderChannel::spawn(async move {
+    TokioProviderChannel::spawn(async move {
         match requester_loop(dispatcher_url.clone(), dispatcher_input, dispatcher_output).await {
             Err(err) => {
                 log::error!("requester_loop err, {}", err);
@@ -62,7 +62,7 @@ where
 
         // panic!("hello");
 
-        ProviderChannel::spawn(async move {
+        TokioProviderChannel::spawn(async move {
             match send_and_recv(request_url, message, response_input).await {
                 Err(err) => {
                     log::error!("send_and_recv error, {}", err);

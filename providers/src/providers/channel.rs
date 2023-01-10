@@ -1,19 +1,16 @@
-use futures::{
-    channel::mpsc::{Receiver, SendError, Sender},
-    executor::ThreadPool,
-    task::SpawnExt,
-};
+use futures::channel::mpsc::{Receiver, SendError, Sender};
 use jsonrpc_rs::{channel::TransportChannel, RPCResult};
 use once_cell::sync::OnceCell;
+use tokio::runtime::Runtime;
 
 /// Ethererum network provider common channel.
 ///
-pub(crate) struct ProviderChannel {
+pub(crate) struct TokioProviderChannel {
     pub(crate) receiver: Receiver<RPCResult<String>>,
     pub(crate) sender: Sender<String>,
 }
 
-impl TransportChannel for ProviderChannel {
+impl TransportChannel for TokioProviderChannel {
     type StreamError = jsonrpc_rs::Error<String, ()>;
 
     type SinkError = SendError;
@@ -26,9 +23,9 @@ impl TransportChannel for ProviderChannel {
     where
         Fut: futures::Future<Output = RPCResult<()>> + Send + 'static,
     {
-        static INSTANCE: OnceCell<ThreadPool> = OnceCell::new();
+        static INSTANCE: OnceCell<tokio::runtime::Runtime> = OnceCell::new();
 
-        let executor = INSTANCE.get_or_init(|| ThreadPool::new().unwrap());
+        let executor = INSTANCE.get_or_init(|| Runtime::new().unwrap());
 
         _ = executor.spawn(async move {
             let result = future.await;
