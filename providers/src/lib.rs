@@ -5,7 +5,7 @@ use types::Block;
 pub mod providers;
 pub mod types;
 
-/// Ether network accessor provider trait
+/// Ether network api provider
 ///
 #[derive(Clone)]
 #[allow(dead_code)]
