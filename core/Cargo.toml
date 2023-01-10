@@ -1,5 +1,5 @@
 [package]
-name = "ethers-client-rs"
+name = "ethers-core-rs"
 version = "0.1.0"
 edition = "2021"
 
