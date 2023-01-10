@@ -1,7 +1,9 @@
-use ethers_core_rs::utils::hex;
+use ethers_core_rs::utils::{eth::BlockHash, hex};
 use jsonrpc_rs::RPCResult;
+use types::Block;
 
 pub mod providers;
+pub mod types;
 
 /// Ether network accessor provider trait
 ///
@@ -17,7 +19,7 @@ impl Provider {
     }
 
     /// Returns the number of most recent block.
-    pub async fn eth_block_number(&mut self) -> RPCResult<u64> {
+    pub async fn eth_blocknumber(&mut self) -> RPCResult<u64> {
         let block_number: String = self
             .rpc_client
             .call("eth_blockNumber", Vec::<String>::new())
@@ -27,13 +29,24 @@ impl Provider {
     }
 
     /// Returns the chain ID of the current network
-    pub async fn eth_chain_id(&mut self) -> RPCResult<u64> {
+    pub async fn eth_chainid(&mut self) -> RPCResult<u64> {
         let block_number: String = self
             .rpc_client
             .call("eth_chainId", Vec::<String>::new())
             .await?;
 
         Ok(hex::hex_to_integer(&block_number).map_err(jsonrpc_rs::map_error)?)
+    }
+
+    /// Returns information about a block by hash.
+    pub async fn get_blockbyhash(
+        &mut self,
+        block_hash: BlockHash,
+        hydrated: bool,
+    ) -> RPCResult<Block> {
+        self.rpc_client
+            .call("eth_getBlockByHash", (block_hash, hydrated))
+            .await
     }
 }
 
@@ -50,7 +63,7 @@ mod tests {
 
         let mut provider = http::connect_to("http://localhost:7545");
 
-        let block_number = provider.eth_block_number().await?;
+        let block_number = provider.eth_blocknumber().await?;
 
         log::debug!("block number {}", block_number);
 
@@ -63,7 +76,7 @@ mod tests {
 
         let mut provider = http::connect_to("http://localhost:7545");
 
-        let block_number = provider.eth_chain_id().await?;
+        let block_number = provider.eth_chainid().await?;
 
         log::debug!("chain_id {}", block_number);
 
