@@ -1,5 +1,5 @@
 [package]
-name = "ethers-core-rs"
+name = "ethers-utils-rs"
 version = "0.1.0"
 edition = "2021"
 
@@ -9,3 +9,4 @@ edition = "2021"
 num = "0.4.0"
 hex = "0.4.3"
 serde = { version = "1.0", features = ["derive"] }
+log = "0.4.16"

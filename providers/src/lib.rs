@@ -1,4 +1,6 @@
-use ethers_core_rs::utils::{eth::BlockHash, hex};
+use std::fmt::{Debug, Display};
+
+use ethers_utils_rs::{eth::BlockHash, hex};
 use jsonrpc_rs::RPCResult;
 use types::Block;
 
@@ -39,11 +41,13 @@ impl Provider {
     }
 
     /// Returns information about a block by hash.
-    pub async fn get_blockbyhash(
-        &mut self,
-        block_hash: BlockHash,
-        hydrated: bool,
-    ) -> RPCResult<Block> {
+    pub async fn get_getblockbyhash<B>(&mut self, block_hash: B, hydrated: bool) -> RPCResult<Block>
+    where
+        B: TryInto<BlockHash>,
+        B::Error: Debug + Display,
+    {
+        let block_hash = block_hash.try_into().map_err(jsonrpc_rs::map_error)?;
+
         self.rpc_client
             .call("eth_getBlockByHash", (block_hash, hydrated))
             .await
@@ -61,7 +65,7 @@ mod tests {
     async fn test_block_number() -> RPCResult<()> {
         _ = pretty_env_logger::try_init();
 
-        let mut provider = http::connect_to("http://localhost:7545");
+        let mut provider = http::connect_to("http://localhost:1545");
 
         let block_number = provider.eth_blocknumber().await?;
 
@@ -74,7 +78,7 @@ mod tests {
     async fn test_chain_id() -> RPCResult<()> {
         _ = pretty_env_logger::try_init();
 
-        let mut provider = http::connect_to("http://localhost:7545");
+        let mut provider = http::connect_to("http://localhost:1545");
 
         let block_number = provider.eth_chainid().await?;
 

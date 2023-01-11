@@ -1,2 +1,2 @@
 [workspace]
-members = ["providers","core"]
+members = ["providers","utils"]

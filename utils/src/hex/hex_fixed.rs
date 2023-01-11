@@ -1,18 +1,16 @@
+use super::{bytes_to_hex, hex_to_bytes};
 use serde::{Deserialize, Serialize};
+/// 32 bytes HexFixed
+#[derive(Debug, Clone, PartialEq)]
+pub struct HexFixed<const LEN: usize>(pub [u8; LEN]);
 
-use crate::utils::hex::{bytes_to_hex, hex_to_bytes};
-
-/// 32 bytes hash
-#[derive(Debug, Clone)]
-pub struct Hash<const LEN: usize>(pub [u8; LEN]);
-
-impl<const LEN: usize> Default for Hash<LEN> {
+impl<const LEN: usize> Default for HexFixed<LEN> {
     fn default() -> Self {
         Self([0; LEN])
     }
 }
 
-impl<const LEN: usize> TryFrom<&str> for Hash<LEN> {
+impl<const LEN: usize> TryFrom<&str> for HexFixed<LEN> {
     type Error = hex::FromHexError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
@@ -26,21 +24,21 @@ impl<const LEN: usize> TryFrom<&str> for Hash<LEN> {
     }
 }
 
-impl<const LEN: usize> TryFrom<String> for Hash<LEN> {
+impl<const LEN: usize> TryFrom<String> for HexFixed<LEN> {
     type Error = hex::FromHexError;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::try_from(value.as_ref())
     }
 }
 
-impl<const LEN: usize> Hash<LEN> {
-    /// Convert `Hash` instance to hex string.
+impl<const LEN: usize> HexFixed<LEN> {
+    /// Convert `HexFixed` instance to hex string.
     pub fn to_string(&self) -> String {
         bytes_to_hex(self.0.as_slice())
     }
 }
 
-impl<const LEN: usize> Serialize for Hash<LEN> {
+impl<const LEN: usize> Serialize for HexFixed<LEN> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -54,15 +52,15 @@ mod visitor {
 
     use serde::de;
 
-    use super::Hash;
+    use super::HexFixed;
 
-    pub struct HashVisitor<const LEN: usize>;
+    pub struct HexFixedVisitor<const LEN: usize>;
 
-    impl<'de, const LEN: usize> de::Visitor<'de> for HashVisitor<LEN> {
-        type Value = Hash<LEN>;
+    impl<'de, const LEN: usize> de::Visitor<'de> for HexFixedVisitor<LEN> {
+        type Value = HexFixed<LEN>;
 
         fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-            formatter.write_str("Hash ")
+            formatter.write_str("HexFixed ")
         }
 
         fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -86,7 +84,7 @@ mod visitor {
             if v.len() != 32 {
                 Err(hex::FromHexError::InvalidStringLength).map_err(serde::de::Error::custom)
             } else {
-                Ok(Hash(v.try_into().map_err(serde::de::Error::custom)?))
+                Ok(HexFixed(v.try_into().map_err(serde::de::Error::custom)?))
             }
         }
 
@@ -97,7 +95,7 @@ mod visitor {
             if v.len() != 32 {
                 Err(hex::FromHexError::InvalidStringLength).map_err(serde::de::Error::custom)
             } else {
-                Ok(Hash(
+                Ok(HexFixed(
                     v.as_slice().try_into().map_err(serde::de::Error::custom)?,
                 ))
             }
@@ -110,18 +108,18 @@ mod visitor {
             if v.len() != 32 {
                 Err(hex::FromHexError::InvalidStringLength).map_err(serde::de::Error::custom)
             } else {
-                Ok(Hash(v.try_into().map_err(serde::de::Error::custom)?))
+                Ok(HexFixed(v.try_into().map_err(serde::de::Error::custom)?))
             }
         }
     }
 }
 
-impl<'de, const LEN: usize> Deserialize<'de> for Hash<LEN> {
+impl<'de, const LEN: usize> Deserialize<'de> for HexFixed<LEN> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: serde::Deserializer<'de>,
     {
-        let hex = deserializer.deserialize_any(visitor::HashVisitor)?;
+        let hex = deserializer.deserialize_any(visitor::HexFixedVisitor)?;
 
         hex.try_into().map_err(serde::de::Error::custom)
     }
@@ -129,18 +127,24 @@ impl<'de, const LEN: usize> Deserialize<'de> for Hash<LEN> {
 
 #[cfg(test)]
 mod tests {
-    use super::Hash;
+    use std::fmt::{Debug, Display};
+
+    use super::HexFixed;
 
     #[test]
-    pub fn test_hash_cast() {
-        let block_hash: Hash<32> =
-            "0x0bb3c2388383f714a8070dc6078a5edbe78f23c96646d4148d63cf964197ccc5"
-                .try_into()
-                .expect("Parse Hash error");
+    fn test_less_than_len() {
+        let hex: HexFixed<1> = "0x1".try_into().expect("Parse hex string error");
 
-        assert_eq!(
-            block_hash.to_string(),
-            "0x0bb3c2388383f714a8070dc6078a5edbe78f23c96646d4148d63cf964197ccc5"
-        );
+        assert_eq!(hex, HexFixed([1]));
+
+        call(hex);
+    }
+
+    fn call<H>(h: H)
+    where
+        H: TryInto<HexFixed<1>>,
+        H::Error: Debug + Display,
+    {
+        assert_eq!(h.try_into().unwrap(), HexFixed([1]));
     }
 }

@@ -1,4 +1,5 @@
 use futures::channel::mpsc::{Receiver, SendError, Sender};
+use jsonrpc_rs::channel::RPCData;
 use jsonrpc_rs::{channel::TransportChannel, RPCResult};
 use once_cell::sync::OnceCell;
 use tokio::runtime::Runtime;
@@ -6,8 +7,8 @@ use tokio::runtime::Runtime;
 /// Ethererum network provider common channel.
 ///
 pub(crate) struct TokioProviderChannel {
-    pub(crate) receiver: Receiver<RPCResult<String>>,
-    pub(crate) sender: Sender<String>,
+    pub(crate) receiver: Receiver<RPCResult<RPCData>>,
+    pub(crate) sender: Sender<RPCData>,
 }
 
 impl TransportChannel for TokioProviderChannel {
@@ -15,9 +16,9 @@ impl TransportChannel for TokioProviderChannel {
 
     type SinkError = SendError;
 
-    type Input = Receiver<RPCResult<String>>;
+    type Input = Receiver<RPCResult<RPCData>>;
 
-    type Output = Sender<String>;
+    type Output = Sender<RPCData>;
 
     fn spawn<Fut>(future: Fut)
     where
