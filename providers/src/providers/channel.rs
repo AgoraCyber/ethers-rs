@@ -12,7 +12,7 @@ pub(crate) struct TokioProviderChannel {
 }
 
 impl TransportChannel for TokioProviderChannel {
-    type StreamError = jsonrpc_rs::Error<String, ()>;
+    type StreamError = jsonrpc_rs::RPCError;
 
     type SinkError = SendError;
 

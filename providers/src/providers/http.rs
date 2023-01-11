@@ -2,7 +2,7 @@ use futures::{
     channel::mpsc::{self, Receiver, Sender},
     SinkExt, StreamExt,
 };
-use jsonrpc_rs::{channel::TransportChannel, Error, ErrorCode, RPCResult};
+use jsonrpc_rs::{channel::TransportChannel, map_error, ErrorCode, RPCError, RPCResult};
 use reqwest::header::{HeaderValue, CONTENT_TYPE};
 
 use crate::Provider;
@@ -96,17 +96,14 @@ where
         .body(message)
         .send()
         .await
-        .map_err(|err| jsonrpc_rs::Error::<String, ()>::from_std_error(err));
+        .map_err(map_error);
 
     log::trace!("response {:?}", response);
 
     match response {
         Ok(response) => {
             if response.status().is_success() {
-                let recv_data = response
-                    .bytes()
-                    .await
-                    .map_err(|err| Error::<String, ()>::from_std_error(err));
+                let recv_data = response.bytes().await.map_err(map_error);
 
                 if let Ok(recv_data) = &recv_data {
                     log::trace!("recv response \r{}", String::from_utf8_lossy(&recv_data));
@@ -114,7 +111,7 @@ where
 
                 response_input.send(recv_data).await?;
             } else {
-                let err = Error::<String, ()> {
+                let err = RPCError {
                     code: ErrorCode::InternalError,
                     message: response.status().to_string(),
                     data: None,

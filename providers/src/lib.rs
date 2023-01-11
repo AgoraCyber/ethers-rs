@@ -54,6 +54,7 @@ impl Provider {
             .await
     }
 
+    /// Returns information about a block by number
     pub async fn eth_getblockbynumber<BT>(
         &mut self,
         block_number_or_tag: BT,
@@ -70,6 +71,22 @@ impl Provider {
         self.rpc_client
             .call("eth_getBlockByHash", (block_number_or_tag, hydrated))
             .await
+    }
+
+    /// Returns the number of transactions in a block from a block matching the given block hash
+    pub async fn eth_getblocktransactioncountbyhash<H>(&mut self, hash: H) -> RPCResult<u64>
+    where
+        H: TryInto<BlockHash>,
+        H::Error: Debug + Display,
+    {
+        let hash = hash.try_into().map_err(jsonrpc_rs::map_error)?;
+
+        let count: String = self
+            .rpc_client
+            .call("eth_getBlockTransactionCountByNumber", vec![hash])
+            .await?;
+
+        Ok(hex::hex_to_integer(&count).map_err(jsonrpc_rs::map_error)?)
     }
 }
 
@@ -127,6 +144,23 @@ mod tests {
              {}",
             serde_json::to_string(&block).expect("Serialize block to json")
         );
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_eth_getblocktransactioncountbyhash() -> RPCResult<()> {
+        _ = pretty_env_logger::try_init();
+
+        let mut provider = http::connect_to("http://localhost:1545");
+
+        let block = provider.eth_getblockbynumber("latest", true).await?;
+
+        let tx_count = provider
+            .eth_getblocktransactioncountbyhash(block.hash)
+            .await?;
+
+        assert_eq!(block.transactions.len() as u64, tx_count);
 
         Ok(())
     }

@@ -5,6 +5,8 @@ use crate::error::ProviderError;
 
 #[derive(Serialize, Deserialize)]
 pub struct Block {
+    /// Current block hash value
+    pub hash: BlockHash,
     /// Parent block hash
     #[serde(rename = "parentHash")]
     pub parent_hash: BlockHash,
@@ -75,8 +77,7 @@ pub struct Block {
     pub size: Number,
 
     /// transactions
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub transactions: Option<Vec<TransactionOrHash>>,
+    pub transactions: Vec<TransactionOrHash>,
 
     /// Uncles
     #[serde(skip_serializing_if = "Option::is_none")]
