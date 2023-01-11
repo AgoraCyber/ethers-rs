@@ -106,7 +106,7 @@ where
                 let recv_data = response.bytes().await.map_err(map_error);
 
                 if let Ok(recv_data) = &recv_data {
-                    log::trace!("recv response \r{}", String::from_utf8_lossy(&recv_data));
+                    log::trace!("recv response {}", String::from_utf8_lossy(&recv_data));
                 }
 
                 response_input.send(recv_data).await?;

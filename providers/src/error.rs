@@ -6,4 +6,7 @@ pub enum ProviderError {
     BlockTag(serde_json::Error),
     #[error("Parse number error, {0}")]
     Number(UtilsError),
+
+    #[error("Parse syncing status err, should always return false if not syncing")]
+    Syncing,
 }

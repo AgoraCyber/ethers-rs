@@ -1,8 +1,11 @@
 use std::fmt::{Debug, Display};
 
-use ethers_utils_rs::{eth::BlockHash, hex};
+use ethers_utils_rs::{
+    eth::{Address, BlockHash, Data, Number},
+    hex,
+};
 use jsonrpc_rs::RPCResult;
-use types::{Block, BlockNumberOrTag};
+use types::{Block, BlockNumberOrTag, SyncingStatus, Transaction};
 
 pub mod error;
 pub mod providers;
@@ -134,6 +137,77 @@ impl Provider {
 
         Ok(hex::hex_to_integer(&count).map_err(jsonrpc_rs::map_error)?)
     }
+
+    /// Returns an object with data about the sync status or false
+    pub async fn eth_syncing(&mut self) -> RPCResult<SyncingStatus> {
+        self.rpc_client.call("eth_syncing", ()).await
+    }
+
+    /// Returns the client coinbase address.
+    pub async fn eth_coinbase(&mut self) -> RPCResult<Address> {
+        self.rpc_client.call("eth_coinbase", ()).await
+    }
+
+    /// Returns a list of addresses owned by client.
+    pub async fn eth_accounts(&mut self) -> RPCResult<Vec<Address>> {
+        self.rpc_client.call("eth_accounts", ()).await
+    }
+
+    /// Executes a new message call immediately without creating a transaction on the block chain.
+    pub async fn eth_call<TX, BT>(
+        &mut self,
+        transaction: TX,
+        block_number_or_tag: Option<BT>,
+    ) -> RPCResult<Data>
+    where
+        TX: TryInto<Transaction>,
+        TX::Error: Debug + Display,
+        BT: TryInto<BlockNumberOrTag>,
+        BT::Error: Debug + Display,
+    {
+        let transaction = transaction.try_into().map_err(jsonrpc_rs::map_error)?;
+
+        if let Some(block_number_or_tag) = block_number_or_tag {
+            let block_number_or_tag = block_number_or_tag
+                .try_into()
+                .map_err(jsonrpc_rs::map_error)?;
+
+            self.rpc_client
+                .call("eth_call", (transaction, block_number_or_tag))
+                .await
+        } else {
+            self.rpc_client.call("eth_call", vec![transaction]).await
+        }
+    }
+
+    /// Generates and returns an estimate of how much gas is necessary to allow the transaction to complete.
+    pub async fn eth_estimate_gas<TX, BT>(
+        &mut self,
+        transaction: TX,
+        block_number_or_tag: Option<BT>,
+    ) -> RPCResult<Number>
+    where
+        TX: TryInto<Transaction>,
+        TX::Error: Debug + Display,
+        BT: TryInto<BlockNumberOrTag>,
+        BT::Error: Debug + Display,
+    {
+        let transaction = transaction.try_into().map_err(jsonrpc_rs::map_error)?;
+
+        if let Some(block_number_or_tag) = block_number_or_tag {
+            let block_number_or_tag = block_number_or_tag
+                .try_into()
+                .map_err(jsonrpc_rs::map_error)?;
+
+            self.rpc_client
+                .call("eth_estimateGas", (transaction, block_number_or_tag))
+                .await
+        } else {
+            self.rpc_client
+                .call("eth_estimateGas", vec![transaction])
+                .await
+        }
+    }
 }
 
 #[cfg(test)]
@@ -141,7 +215,7 @@ mod tests {
 
     use jsonrpc_rs::RPCResult;
 
-    use crate::providers::http;
+    use crate::{providers::http, types::SyncingStatus};
 
     #[async_std::test]
     async fn test_block_number() -> RPCResult<()> {
@@ -221,5 +295,48 @@ mod tests {
         assert_eq!(block.uncles.len() as u64, uncles);
 
         Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_eth_syncing() -> RPCResult<()> {
+        _ = pretty_env_logger::try_init();
+
+        let mut provider = http::connect_to("http://localhost:1545");
+
+        let status = provider.eth_syncing().await?;
+
+        assert_eq!(status, SyncingStatus::False);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_eth_coinbase() {
+        _ = pretty_env_logger::try_init();
+
+        let mut provider = http::connect_to("http://localhost:1545");
+
+        let address = provider.eth_coinbase().await.expect("eth_coinbase");
+
+        // log::debug!("{}", status);
+
+        assert_eq!(
+            address.to_string(),
+            "0xe59d4e3dc9e21f009dc88c1ba1ecffbdfe123886"
+        );
+    }
+
+    #[async_std::test]
+    async fn test_eth_accounts() {
+        _ = pretty_env_logger::try_init();
+
+        let mut provider = http::connect_to("http://localhost:1545");
+
+        let accounts = provider.eth_accounts().await.expect("eth_coinbase");
+
+        log::debug!(
+            "{:?}",
+            accounts.iter().map(|a| a.to_string()).collect::<Vec<_>>()
+        );
     }
 }

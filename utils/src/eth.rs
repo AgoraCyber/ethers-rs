@@ -12,6 +12,7 @@ hex_fixed_def!(ReceiptsRoot, 32);
 hex_def!(Difficulty);
 hex_def!(Number);
 hex_def!(ExtraData);
+hex_def!(Data);
 hex_def!(Input);
 hex_fixed_def!(MixHash, 32);
 hex_fixed_def!(Nonce, 8);
