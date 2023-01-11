@@ -1,6 +1,8 @@
 use ethers_utils_rs::eth::*;
 use serde::{Deserialize, Serialize};
 
+use crate::error::ProviderError;
+
 #[derive(Serialize, Deserialize)]
 pub struct Block {
     /// Parent block hash
@@ -151,12 +153,56 @@ pub struct AccessList {
     pub storage_keys: Option<Vec<Sha3Hash>>,
 }
 
+/// eth_getBlockByNumber parameter `Block`
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[serde(untagged)]
+pub enum BlockNumberOrTag {
+    Number(Number),
+    Tag(BlockTag),
+}
+
+impl Default for BlockNumberOrTag {
+    fn default() -> Self {
+        BlockNumberOrTag::Tag(BlockTag::Latest)
+    }
+}
+
+/// eth_getBlockByNumber parameter `Block` valid tag enum
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum BlockTag {
+    Earliest,
+    Finalized,
+    Safe,
+    Latest,
+    Pending,
+}
+
+impl<'a> TryFrom<&'a str> for BlockNumberOrTag {
+    type Error = ProviderError;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        if value.starts_with("0x") {
+            Ok(BlockNumberOrTag::Number(
+                value.try_into().map_err(|err| ProviderError::Number(err))?,
+            ))
+        } else {
+            Ok(BlockNumberOrTag::Tag(
+                serde_json::from_str(&format!("\"{}\"", value))
+                    .map_err(|err| ProviderError::BlockTag(err))?,
+            ))
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
+    use ethers_utils_rs::hex::Hex;
     use serde::{Deserialize, Serialize};
 
-    use super::{Block, Transaction};
+    use crate::types::BlockTag;
+
+    use super::{Block, BlockNumberOrTag, Transaction};
 
     fn check_serde<'de, T: Serialize + Deserialize<'de>>(tag: &str, data: &'de str) {
         // let _: serde_json::Value =
@@ -190,5 +236,29 @@ mod tests {
         for (tag, data) in txs {
             check_serde::<Transaction>(tag, data);
         }
+    }
+
+    #[test]
+    fn test_block_tag() {
+        fn check_block_number_or_tag(source: &str, expect: BlockNumberOrTag) {
+            let t: BlockNumberOrTag = source.try_into().expect(&format!("Parse {} error", source));
+
+            assert_eq!(expect, t);
+        }
+
+        check_block_number_or_tag(
+            "0x1001",
+            BlockNumberOrTag::Number(Hex([0x10, 0x01].to_vec())),
+        );
+
+        check_block_number_or_tag("earliest", BlockNumberOrTag::Tag(BlockTag::Earliest));
+
+        check_block_number_or_tag("finalized", BlockNumberOrTag::Tag(BlockTag::Finalized));
+
+        check_block_number_or_tag("safe", BlockNumberOrTag::Tag(BlockTag::Safe));
+
+        check_block_number_or_tag("latest", BlockNumberOrTag::Tag(BlockTag::Latest));
+
+        check_block_number_or_tag("pending", BlockNumberOrTag::Tag(BlockTag::Pending));
     }
 }

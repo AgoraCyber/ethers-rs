@@ -2,8 +2,9 @@ use std::fmt::{Debug, Display};
 
 use ethers_utils_rs::{eth::BlockHash, hex};
 use jsonrpc_rs::RPCResult;
-use types::Block;
+use types::{Block, BlockNumberOrTag};
 
+pub mod error;
 pub mod providers;
 pub mod types;
 
@@ -41,7 +42,7 @@ impl Provider {
     }
 
     /// Returns information about a block by hash.
-    pub async fn get_getblockbyhash<B>(&mut self, block_hash: B, hydrated: bool) -> RPCResult<Block>
+    pub async fn eth_getblockbyhash<B>(&mut self, block_hash: B, hydrated: bool) -> RPCResult<Block>
     where
         B: TryInto<BlockHash>,
         B::Error: Debug + Display,
@@ -50,6 +51,24 @@ impl Provider {
 
         self.rpc_client
             .call("eth_getBlockByHash", (block_hash, hydrated))
+            .await
+    }
+
+    pub async fn eth_getblockbynumber<BT>(
+        &mut self,
+        block_number_or_tag: BT,
+        hydrated: bool,
+    ) -> RPCResult<Block>
+    where
+        BT: TryInto<BlockNumberOrTag>,
+        BT::Error: Debug + Display,
+    {
+        let block_number_or_tag = block_number_or_tag
+            .try_into()
+            .map_err(jsonrpc_rs::map_error)?;
+
+        self.rpc_client
+            .call("eth_getBlockByHash", (block_number_or_tag, hydrated))
             .await
     }
 }
@@ -83,6 +102,31 @@ mod tests {
         let block_number = provider.eth_chainid().await?;
 
         log::debug!("chain_id {}", block_number);
+
+        Ok(())
+    }
+
+    #[async_std::test]
+    async fn test_eth_getblockbynumber() -> RPCResult<()> {
+        _ = pretty_env_logger::try_init();
+
+        let mut provider = http::connect_to("http://localhost:1545");
+
+        let block = provider.eth_getblockbynumber("latest", true).await?;
+
+        log::debug!(
+            "block
+             {}",
+            serde_json::to_string(&block).expect("Serialize block to json")
+        );
+
+        let block = provider.eth_getblockbynumber("0x1", true).await?;
+
+        log::debug!(
+            "block
+             {}",
+            serde_json::to_string(&block).expect("Serialize block to json")
+        );
 
         Ok(())
     }

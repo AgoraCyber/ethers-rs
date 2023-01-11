@@ -1,8 +1,10 @@
+use crate::error::UtilsError;
+
 use super::{bytes_to_hex, hex_to_bytes};
 use serde::{Deserialize, Serialize};
 
 /// 32 bytes HexFixed
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Hex(pub Vec<u8>);
 
 impl Default for Hex {
@@ -12,17 +14,17 @@ impl Default for Hex {
 }
 
 impl TryFrom<&str> for Hex {
-    type Error = hex::FromHexError;
+    type Error = UtilsError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let bytes = hex_to_bytes(value)?;
+        let bytes = hex_to_bytes(value).map_err(|err| UtilsError::Hex(err))?;
 
         Ok(Self(bytes))
     }
 }
 
 impl TryFrom<String> for Hex {
-    type Error = hex::FromHexError;
+    type Error = UtilsError;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::try_from(value.as_ref())
     }

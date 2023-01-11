@@ -1,3 +1,5 @@
+use crate::error::UtilsError;
+
 use super::{bytes_to_hex, hex_to_bytes};
 use serde::{Deserialize, Serialize};
 /// 32 bytes HexFixed
@@ -11,21 +13,19 @@ impl<const LEN: usize> Default for HexFixed<LEN> {
 }
 
 impl<const LEN: usize> TryFrom<&str> for HexFixed<LEN> {
-    type Error = hex::FromHexError;
+    type Error = UtilsError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let bytes = hex_to_bytes(value)?;
+        let bytes = hex_to_bytes(value).map_err(|err| UtilsError::Hex(err))?;
 
-        Ok(Self(
-            bytes
-                .try_into()
-                .map_err(|_| hex::FromHexError::InvalidStringLength)?,
-        ))
+        Ok(Self(bytes.try_into().map_err(|_| {
+            UtilsError::Hex(hex::FromHexError::InvalidStringLength)
+        })?))
     }
 }
 
 impl<const LEN: usize> TryFrom<String> for HexFixed<LEN> {
-    type Error = hex::FromHexError;
+    type Error = UtilsError;
     fn try_from(value: String) -> Result<Self, Self::Error> {
         Self::try_from(value.as_ref())
     }
