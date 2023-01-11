@@ -1,7 +1,7 @@
 use std::fmt::{Debug, Display};
 
 use ethers_utils_rs::{
-    eth::{Address, BlockHash, Data, Number},
+    eth::{Address, BlockHash, Bytecode, Number},
     hex,
 };
 use jsonrpc_rs::RPCResult;
@@ -158,7 +158,7 @@ impl Provider {
         &mut self,
         transaction: TX,
         block_number_or_tag: Option<BT>,
-    ) -> RPCResult<Data>
+    ) -> RPCResult<Bytecode>
     where
         TX: TryInto<Transaction>,
         TX::Error: Debug + Display,
