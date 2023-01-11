@@ -80,8 +80,7 @@ pub struct Block {
     pub transactions: Vec<TransactionOrHash>,
 
     /// Uncles
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uncles: Option<Vec<UncleHash>>,
+    pub uncles: Vec<UncleHash>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -160,6 +159,13 @@ pub struct AccessList {
 pub enum BlockNumberOrTag {
     Number(Number),
     Tag(BlockTag),
+}
+
+impl TryFrom<Number> for BlockNumberOrTag {
+    type Error = ProviderError;
+    fn try_from(value: Number) -> Result<Self, Self::Error> {
+        Ok(BlockNumberOrTag::Number(value))
+    }
 }
 
 impl Default for BlockNumberOrTag {
