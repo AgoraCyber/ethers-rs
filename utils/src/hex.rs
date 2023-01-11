@@ -1,10 +1,10 @@
 use num::Num;
 
-mod hex_fixed;
-pub use hex_fixed::*;
+#[macro_use]
+pub mod hex_fixed;
+#[macro_use]
+pub mod hex_var_len;
 
-mod hex_var_len;
-pub use hex_var_len::*;
 /// Parse hex string to integer
 ///
 /// If `source` have the 0x prefix, skip over them.
@@ -29,8 +29,8 @@ pub fn hex_to_bytes(source: &str) -> Result<Vec<u8>, hex::FromHexError> {
 pub fn bytes_to_hex(source: &[u8]) -> String {
     let hex_str = format!("0x{}", hex::encode(source));
 
-    if hex_str.starts_with("0x0") {
-        format!("0x{}", hex_str.trim_start_matches("0x0"))
+    if &hex_str == "0x00" {
+        "0x0".to_string()
     } else {
         hex_str
     }
@@ -38,16 +38,18 @@ pub fn bytes_to_hex(source: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use crate::hex::{bytes_to_hex, hex_to_bytes};
+    use crate::{
+        hex::{bytes_to_hex, hex_to_bytes},
+        hex_fixed_def,
+    };
 
-    use super::HexFixed;
+    hex_fixed_def!(H32, 32);
 
     #[test]
     pub fn test_hex_fixed_cast() {
-        let block_hash: HexFixed<32> =
-            "0x0bb3c2388383f714a8070dc6078a5edbe78f23c96646d4148d63cf964197ccc5"
-                .try_into()
-                .expect("Parse HexFixed error");
+        let block_hash: H32 = "0x0bb3c2388383f714a8070dc6078a5edbe78f23c96646d4148d63cf964197ccc5"
+            .try_into()
+            .expect("Parse HexFixed error");
 
         assert_eq!(
             block_hash.to_string(),

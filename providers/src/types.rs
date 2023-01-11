@@ -204,7 +204,7 @@ impl<'a> TryFrom<&'a str> for BlockNumberOrTag {
 #[cfg(test)]
 mod tests {
 
-    use ethers_utils_rs::hex::Hex;
+    use ethers_utils_rs::eth::Number;
     use serde::{Deserialize, Serialize};
 
     use crate::types::BlockTag;
@@ -255,7 +255,7 @@ mod tests {
 
         check_block_number_or_tag(
             "0x1001",
-            BlockNumberOrTag::Number(Hex([0x10, 0x01].to_vec())),
+            BlockNumberOrTag::Number(Number([0x10, 0x01].to_vec())),
         );
 
         check_block_number_or_tag("earliest", BlockNumberOrTag::Tag(BlockTag::Earliest));

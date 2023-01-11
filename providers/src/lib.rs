@@ -21,6 +21,11 @@ impl Provider {
         Self { rpc_client }
     }
 
+    /// Get provider inner jsonrpc [`Client`](jsonrpc_rs::Client) ref.
+    pub fn client(&mut self) -> &mut jsonrpc_rs::Client {
+        &mut self.rpc_client
+    }
+
     /// Returns the number of most recent block.
     pub async fn eth_block_number(&mut self) -> RPCResult<u64> {
         let block_number: String = self
