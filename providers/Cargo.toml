@@ -18,7 +18,7 @@ serde_json = "^1.0"
 tokio = { version = "1", features = ["full"] }
 ethers-utils-rs = {path = "../utils"}
 serde = { version = "1.0", features = ["derive"] }
-
+serde_with = "2.2.0"
 
 [dev-dependencies]
 dotenv = "0.15.0"

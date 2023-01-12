@@ -7,6 +7,15 @@ pub use block_num_tag::*;
 mod syncing;
 pub use syncing::*;
 
+mod accesslist;
+pub use accesslist::*;
+
+mod fee;
+pub use fee::*;
+
+mod filter;
+pub use filter::*;
+
 #[cfg(test)]
 mod tests {
 
@@ -34,8 +43,11 @@ mod tests {
         _ = pretty_env_logger::try_init();
 
         let blocks = vec![
+            ("empty_txs", include_str!("test-data/block/empty_txs.json")),
             ("block", include_str!("test-data/block/block.json")),
+            ("hadhat", include_str!("test-data/block/hardhat.json")),
             ("0x30e49e13258f051e6ea8ec36f3e4e15df663396cf307299dbf5830441fd8ed98", include_str!("test-data/block/0x30e49e13258f051e6ea8ec36f3e4e15df663396cf307299dbf5830441fd8ed98.json"))
+
         ];
 
         for (tag, data) in blocks {

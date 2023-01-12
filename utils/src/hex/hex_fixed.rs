@@ -24,6 +24,12 @@ macro_rules! hex_fixed_def {
                 let bytes = crate::hex::hex_to_bytes(value)
                     .map_err(|err| crate::error::UtilsError::Hex(err))?;
 
+                if bytes.len() != $len {
+                    return Err(crate::error::UtilsError::Hex(
+                        hex::FromHexError::InvalidStringLength,
+                    ));
+                }
+
                 Ok(Self(bytes.try_into().map_err(|_| {
                     crate::error::UtilsError::Hex(hex::FromHexError::InvalidStringLength)
                 })?))
@@ -67,8 +73,8 @@ macro_rules! hex_fixed_def {
                 impl<'de> de::Visitor<'de> for Visitor {
                     type Value = $name;
 
-                    fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-                        formatter.write_str("$name ")
+                    fn expecting(&self, f: &mut Formatter) -> std::fmt::Result {
+                        write!(f, "fixed hex string for {}", stringify!($name))
                     }
 
                     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
@@ -95,6 +101,13 @@ macro_rules! hex_fixed_def {
                         } else {
                             Ok($name(v.try_into().map_err(serde::de::Error::custom)?))
                         }
+                    }
+
+                    fn visit_none<E>(self) -> Result<Self::Value, E>
+                    where
+                        E: de::Error,
+                    {
+                        Ok($name::default())
                     }
 
                     fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>

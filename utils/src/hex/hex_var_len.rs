@@ -66,7 +66,7 @@ macro_rules! hex_def {
                     type Value = $name;
 
                     fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-                        formatter.write_str("$name ")
+                        write!(formatter, "hex string for {}", stringify!($name))
                     }
 
                     fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>

@@ -17,3 +17,6 @@ hex_def!(Input);
 hex_fixed_def!(MixHash, 32);
 hex_fixed_def!(Nonce, 8);
 hex_fixed_def!(Type, 1);
+hex_fixed_def!(Status, 1);
+hex_fixed_def!(Topic, 32);
+hex_fixed_def!(Signature, 65);

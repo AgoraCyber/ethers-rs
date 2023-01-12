@@ -27,13 +27,16 @@ pub fn hex_to_bytes(source: &str) -> Result<Vec<u8>, hex::FromHexError> {
 
 /// Convert bytes to hex string with prefix `0x`
 pub fn bytes_to_hex(source: &[u8]) -> String {
-    let hex_str = format!("0x{}", hex::encode(source));
+    let hex_str = hex::encode(source);
 
-    if &hex_str == "0x00" {
-        "0x0".to_string()
-    } else {
-        hex_str
-    }
+    format!(
+        "0x{}",
+        if hex_str.len() == 2 {
+            hex_str.trim_start_matches("0")
+        } else {
+            hex_str.as_str()
+        }
+    )
 }
 
 #[cfg(test)]
@@ -59,11 +62,11 @@ mod tests {
 
     #[test]
     fn test_zero_hex() {
-        let zero = hex_to_bytes("0x0").expect("success");
+        let zero = hex_to_bytes("0x1").expect("success");
 
-        assert_eq!(zero, [0; 1]);
+        assert_eq!(zero, [1; 1]);
 
-        assert_eq!("0x0", bytes_to_hex(&zero));
+        assert_eq!("0x1", bytes_to_hex(&zero));
 
         assert_eq!(
             bytes_to_hex(&hex_to_bytes("0x10").expect("hex_to_bytes")),
