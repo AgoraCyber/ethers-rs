@@ -4,7 +4,7 @@ use jsonrpc_rs::{channel::TransportChannel, RPCResult};
 use once_cell::sync::OnceCell;
 use tokio::runtime::Runtime;
 
-/// Ethererum network provider common channel.
+/// Ethererum network provider tokio io event driver channel.
 ///
 pub(crate) struct TokioProviderChannel {
     pub(crate) receiver: Receiver<RPCResult<RPCData>>,
