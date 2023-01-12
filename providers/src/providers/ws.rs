@@ -62,7 +62,7 @@ pub async fn connect_to<S: AsRef<str> + Clone + Send + 'static + Sync>(
     });
 
     Ok(Provider::new(jsonrpc_rs::Client::new(
-        format!("eth-provider-https_{}", url.as_ref()),
+        format!("eth-provider-ws_{}", url.as_ref()),
         client_transport,
     )))
 }
