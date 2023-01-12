@@ -1,2 +1,2 @@
 [workspace]
-members = ["providers","utils","abi"]
+members = ["providers","utils","ethers","macros"]
