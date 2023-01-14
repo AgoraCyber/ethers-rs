@@ -1,14 +1,6 @@
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+//! rexport ethers macros.
+pub use ethers_macros_rs::*;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub use ethers_utils_rs::eth::Address;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use ethabi;

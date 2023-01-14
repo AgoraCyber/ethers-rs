@@ -7,3 +7,5 @@ edition = "2021"
 
 [dependencies]
 ethers-macros-rs = {path = "../macros"}
+ethers-utils-rs = {path = "../utils"}
+ethabi = "18.0.0"
