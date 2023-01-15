@@ -9,7 +9,7 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
-ethabi = "18.0.0"
+ethabi = {version = "18.0.0", path = "../parity/ethabi"}
 heck = "0.4"
 syn = { version = "^1", features = ["full"] }
 quote = "^1"

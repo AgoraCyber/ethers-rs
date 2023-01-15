@@ -1,2 +1,10 @@
 [workspace]
-members = ["providers","utils","ethers","macros"]
+members = [
+    "providers","utils",
+    "ethers","macros",
+    "parity/ethabi",
+    # "parity/ethereum-types",
+    # "parity/fixed-hash",
+    # "parity/primitive-types",
+    # "parity/uint"
+]
