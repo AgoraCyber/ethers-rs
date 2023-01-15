@@ -22,7 +22,7 @@ pub struct Provider {
 }
 
 impl Provider {
-    pub(crate) fn new(rpc_client: jsonrpc_rs::Client) -> Self {
+    pub fn new(rpc_client: jsonrpc_rs::Client) -> Self {
         Self { rpc_client }
     }
 
