@@ -7,11 +7,20 @@ mod contract;
 mod error;
 mod gen;
 
-#[proc_macro_derive(Contract, attributes(abi_file))]
-pub fn table(item: TokenStream) -> TokenStream {
-    let stream = Contract::new(parse_macro_input!(item))
-        .expect("Derive contract structure")
-        .gen_ir_code();
+// #[proc_macro_derive(Contract, attributes(abi_file))]
+// pub fn table(item: TokenStream) -> TokenStream {
+//     let stream = Contract::new(parse_macro_input!(item))
+//         .expect("Derive contract structure")
+//         .gen_ir_code();
+
+//     eprintln!("{}", stream);
+
+//     stream.into()
+// }
+
+#[proc_macro]
+pub fn contract(item: TokenStream) -> TokenStream {
+    let stream = parse_macro_input!(item as Contract).gen_ir_code();
 
     eprintln!("{}", stream);
 

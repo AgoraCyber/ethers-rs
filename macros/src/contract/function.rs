@@ -158,6 +158,40 @@ impl<'a> From<&'a ethabi::Function> for Function {
     }
 }
 
+impl Function {
+    pub fn gen_instance_fn(&self) -> TokenStream {
+        let module_name = syn::Ident::new(&self.name.to_snake_case(), Span::call_site());
+        let tokenize = &self.inputs.tokenize;
+        let declarations: &Vec<_> = &self
+            .inputs
+            .template_params
+            .iter()
+            .map(|i| &i.declaration)
+            .collect();
+        let definitions: &Vec<_> = &self
+            .inputs
+            .template_params
+            .iter()
+            .map(|i| &i.definition)
+            .collect();
+
+        let outputs_result = &self.outputs.result;
+
+        quote! {
+            pub async fn #module_name<#(#declarations),*>(&mut self, #(#definitions),*) -> ethers_rs::Result<#outputs_result> {
+                let f = functions::#module_name::function();
+                let tokens = vec![#(#tokenize),*];
+
+                let bytes = f.encode_input(&tokens).expect(INTERNAL_ERR);
+
+                let result = functions::#module_name::decode_output(&bytes)?;
+
+                Ok(result)
+            }
+        }
+    }
+}
+
 impl CodeGen for Function {
     fn gen_ir_code(&self) -> TokenStream {
         let name = &self.name;
@@ -193,7 +227,8 @@ impl CodeGen for Function {
                 use ethabi;
                 use super::INTERNAL_ERR;
 
-                fn function() -> ethabi::Function {
+                pub fn function() -> ethabi::Function {
+                    #[allow(deprecated)]
                     ethabi::Function {
                         name: #name.into(),
                         inputs: #recreate_inputs,

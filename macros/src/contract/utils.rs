@@ -229,7 +229,7 @@ pub fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_ma
                     let index2 = TokenStream::from_str(&format!("{}", index)).unwrap();
 
                     let token = quote! {
-                        v.#index2
+                        v[#index2].clone()
                     };
 
                     let stream = from_token(t, &token);
@@ -251,12 +251,10 @@ pub fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_ma
 
             let idents = streams.iter().map(|(_, ident)| ident).collect::<Vec<_>>();
 
-            let types = types.iter().map(|t| rust_type(t)).collect::<Vec<_>>();
-
             quote! {
 
                 {
-                    let v:(#(#types,)*) = #token;
+                    let v = #token.into_tuple().expect(INTERNAL_ERR);
 
                     #(#to_token_streams)*
 

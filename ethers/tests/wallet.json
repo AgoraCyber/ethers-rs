@@ -2,6 +2,365 @@
   {
     "inputs": [
       {
+        "internalType": "address",
+        "name": "WETH_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from_",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId_",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to_",
+        "type": "address"
+      }
+    ],
+    "name": "Delist",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from_",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId_",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "to_",
+        "type": "address"
+      }
+    ],
+    "name": "List",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from_",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "MakerBurn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from_",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId_",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "dex_",
+        "type": "address"
+      }
+    ],
+    "name": "MakerMint",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from_",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId_",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "settleSkuQuantityOrId_",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "settlePaymentOrId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "MakerUpdate",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from_",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId_",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "responseSkuQuantityOrId_",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "responsePriceQuantityOrId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "TakerBurn",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "from_",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "tokenId_",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "requestSkuQuantityOrId_",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "requestPriceQuantityOrId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "TakerMint",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "_WETH",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "makerId_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "to_",
+        "type": "address"
+      }
+    ],
+    "name": "approveDex",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "makerId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "closeMaker",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "takerId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "closeTaker",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "index_",
+        "type": "uint256"
+      }
+    ],
+    "name": "makerByIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "makerId_",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "makerId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "makerMetadata",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "sku",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "skuQuantityOrId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "address",
+            "name": "paymentCurrency",
+            "type": "address"
+          },
+          {
+            "internalType": "uint256",
+            "name": "priceQuantityOrId",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint128",
+            "name": "skuType",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "paymentCurrencyType",
+            "type": "uint128"
+          }
+        ],
+        "internalType": "struct IMaker.Metadata",
+        "name": "maker_",
+        "type": "tuple"
+      },
+      {
+        "internalType": "uint256",
+        "name": "sentSkuQuantityOrId_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "receivedPaymentQuantityOrId_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "address",
+        "name": "dex_",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "components": [
           {
             "internalType": "address",
@@ -53,6 +412,246 @@
       }
     ],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "maker_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "makerId_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "requestSkuQuantityOrId_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "requestPriceQuantityOrId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "mintTaker",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "takerId_",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "",
+        "type": "bytes"
+      }
+    ],
+    "name": "onERC721Received",
+    "outputs": [
+      {
+        "internalType": "bytes4",
+        "name": "",
+        "type": "bytes4"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes4",
+        "name": "interfaceId",
+        "type": "bytes4"
+      }
+    ],
+    "name": "supportsInterface",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "index_",
+        "type": "uint256"
+      }
+    ],
+    "name": "takerByIndex",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "takerId_",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "takerId_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "responseSkuQuantityOrId_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "responsePriceQuantityOrId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "takerCallback",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "from_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "takerId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "takerFrom",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "takerId_",
+        "type": "uint256"
+      }
+    ],
+    "name": "takerMetadata",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "maker_",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "makerId_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "requestSkuQuantityOrId_",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "requestPriceQuantityOrId_",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalSupplyOfMaker",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalSupply_",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalSupplyOfTaker",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "totalSupply_",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   }
 ]

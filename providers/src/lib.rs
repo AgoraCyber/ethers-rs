@@ -11,6 +11,8 @@ pub mod error;
 pub mod providers;
 pub mod types;
 
+pub use error::ProviderError;
+
 /// Ether network api provider
 ///
 #[derive(Clone)]
