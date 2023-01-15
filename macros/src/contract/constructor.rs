@@ -8,6 +8,7 @@ use super::utils::*;
 pub struct Constructor {
     inputs_declarations: Vec<TokenStream>,
     inputs_definitions: Vec<TokenStream>,
+    inputs_where_clauses: Vec<TokenStream>,
     tokenize: Vec<TokenStream>,
     recreate_inputs: TokenStream,
 }
@@ -21,6 +22,13 @@ impl<'a> From<&'a ethabi::Constructor> for Constructor {
             .iter()
             .enumerate()
             .map(|(index, param)| template_param_type(&param.kind, index))
+            .collect::<Vec<_>>();
+
+        let inputs_where_clauses = c
+            .inputs
+            .iter()
+            .enumerate()
+            .map(|(index, param)| template_param_where_clause(&param.kind, index))
             .collect::<Vec<_>>();
 
         let kinds: Vec<_> = c
@@ -55,6 +63,7 @@ impl<'a> From<&'a ethabi::Constructor> for Constructor {
         Self {
             inputs_declarations,
             inputs_definitions,
+            inputs_where_clauses,
             tokenize,
             recreate_inputs: to_ethabi_param_vec(&c.inputs),
         }
@@ -65,17 +74,23 @@ impl CodeGen for Constructor {
     fn gen_ir_code(&self) -> TokenStream {
         let declarations = &self.inputs_declarations;
         let definitions = &self.inputs_definitions;
+        let where_clauses = &self.inputs_where_clauses;
         let tokenize = &self.tokenize;
         let recreate_inputs = &self.recreate_inputs;
 
         quote! {
             /// Encodes a call to contract's constructor.
-            pub fn constructor<#(#declarations),*>(#(#definitions),*) -> ethabi::Bytes {
+            pub fn constructor<#(#declarations),*>(#(#definitions),*) -> ethers_rs::Result<ethabi::Bytes>
+            where #(#where_clauses,)*
+            {
                 let c = ethabi::Constructor {
                     inputs: #recreate_inputs,
                 };
                 let tokens = vec![#(#tokenize),*];
-                c.encode_input(code, &tokens).expect(INTERNAL_ERR)
+
+                let bytes = c.encode_input(code, &tokens)?;
+
+                Ok(bytes)
             }
         }
     }

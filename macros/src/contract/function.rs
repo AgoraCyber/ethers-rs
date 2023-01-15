@@ -19,6 +19,13 @@ struct TemplateParam {
     /// [param0: T0, hello_world: T1, param2: T2]
     /// ```
     definition: TokenStream,
+
+    /// Template param where clause.
+    ///
+    /// ```text
+    /// [T0: Into<Uint>, T1: Into<Bytes>, T2: IntoIterator<Item = U2>, U2 = Into<Uint>]
+    /// ```
+    where_clause: TokenStream,
 }
 
 struct Inputs {
@@ -73,6 +80,12 @@ impl<'a> From<&'a ethabi::Function> for Function {
             .enumerate()
             .map(|(index, param)| template_param_type(&param.kind, index));
 
+        let where_clauses = f
+            .inputs
+            .iter()
+            .enumerate()
+            .map(|(index, param)| template_param_where_clause(&param.kind, index));
+
         // [Uint, Bytes, Vec<Uint>]
         let kinds: Vec<_> = f
             .inputs
@@ -91,9 +104,11 @@ impl<'a> From<&'a ethabi::Function> for Function {
 
         let template_params = declarations
             .zip(definitions)
-            .map(|(declaration, definition)| TemplateParam {
+            .zip(where_clauses)
+            .map(|((declaration, definition), where_clause)| TemplateParam {
                 declaration,
                 definition,
+                where_clause,
             })
             .collect();
 
@@ -175,10 +190,19 @@ impl Function {
             .map(|i| &i.definition)
             .collect();
 
+        let where_clauses: &Vec<_> = &self
+            .inputs
+            .template_params
+            .iter()
+            .map(|i| &i.where_clause)
+            .collect();
+
         let outputs_result = &self.outputs.result;
 
         quote! {
-            pub async fn #module_name<#(#declarations),*>(&mut self, #(#definitions),*) -> ethers_rs::Result<#outputs_result> {
+            pub async fn #module_name<#(#declarations),*>(&mut self, #(#definitions),*) -> ethers_rs::Result<#outputs_result>
+            where #(#where_clauses,)*
+            {
                 let f = functions::#module_name::function();
                 let tokens = vec![#(#tokenize),*];
 
@@ -222,6 +246,13 @@ impl CodeGen for Function {
         let outputs_result = &self.outputs.result;
         let outputs_implementation = &self.outputs.implementation;
 
+        let where_clauses: &Vec<_> = &self
+            .inputs
+            .template_params
+            .iter()
+            .map(|i| &i.where_clause)
+            .collect();
+
         quote! {
             pub mod #module_name {
                 use ethabi;
@@ -250,10 +281,15 @@ impl CodeGen for Function {
                 }
 
                 /// Encodes function input.
-                pub fn encode_input<#(#declarations),*>(#(#definitions),*) -> ethabi::Bytes {
+                pub fn encode_input<#(#declarations),*>(#(#definitions),*) -> ethers_rs::Result<ethabi::Bytes>
+                where #(#where_clauses,)*
+                {
                     let f = function();
                     let tokens = vec![#(#tokenize),*];
-                    f.encode_input(&tokens).expect(INTERNAL_ERR)
+
+                    let bytes = f.encode_input(&tokens)?;
+
+                    Ok(bytes)
                 }
 
                 /// Decodes function output.
@@ -261,12 +297,6 @@ impl CodeGen for Function {
                     ethabi::FunctionOutputDecoder::decode(&Decoder(function()), output)
                 }
 
-                /// Encodes function output and creates a `Decoder` instance.
-                pub fn call<#(#declarations),*>(#(#definitions),*) -> (ethabi::Bytes, Decoder) {
-                    let f = function();
-                    let tokens = vec![#(#tokenize),*];
-                    (f.encode_input(&tokens).expect(INTERNAL_ERR), Decoder(f))
-                }
             }
         }
     }

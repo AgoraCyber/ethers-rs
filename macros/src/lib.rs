@@ -22,7 +22,7 @@ mod gen;
 pub fn contract(item: TokenStream) -> TokenStream {
     let stream = parse_macro_input!(item as Contract).gen_ir_code();
 
-    eprintln!("{}", stream);
+    // eprintln!("{}", stream);
 
     stream.into()
 }

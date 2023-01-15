@@ -4,19 +4,69 @@ use ethabi::{Param, ParamType};
 use heck::ToSnakeCase;
 use proc_macro2::{Span, TokenStream};
 use quote::{format_ident, quote};
+
 /// Convert ethabi parame_type to generic param type
 pub fn template_param_type(input: &ParamType, index: usize) -> proc_macro2::TokenStream {
     let t_ident = syn::Ident::new(&format!("T{index}"), Span::call_site());
     let u_ident = syn::Ident::new(&format!("U{index}"), Span::call_site());
     match input {
-        ParamType::Address => quote! { #t_ident: Into<ethabi::Address> },
-        ParamType::Bytes => quote! { #t_ident: Into<ethabi::Bytes> },
-        ParamType::FixedBytes(32) => quote! { #t_ident: Into<ethabi::Hash> },
-        ParamType::FixedBytes(size) => quote! { #t_ident: Into<[u8; #size]> },
-        ParamType::Int(_) => quote! { #t_ident: Into<ethabi::Int> },
-        ParamType::Uint(_) => quote! { #t_ident: Into<ethabi::Uint> },
-        ParamType::Bool => quote! { #t_ident: Into<bool> },
-        ParamType::String => quote! { #t_ident: Into<String> },
+        ParamType::Address => {
+            quote! { #t_ident }
+        }
+        ParamType::Bytes => quote! { #t_ident },
+        ParamType::FixedBytes(32) => quote! { #t_ident },
+        ParamType::FixedBytes(_) => quote! { #t_ident },
+        ParamType::Int(_) => quote! { #t_ident },
+        ParamType::Uint(_) => quote! { #t_ident },
+        ParamType::Bool => quote! { #t_ident },
+        ParamType::String => quote! { #t_ident },
+        ParamType::Array(_) => {
+            quote! {
+                #t_ident, #u_ident
+            }
+        }
+        ParamType::FixedArray(_, _) => {
+            quote! {
+                #t_ident, #u_ident
+            }
+        }
+        ParamType::Tuple(_) => {
+            quote! {
+                #t_ident
+            }
+        }
+    }
+}
+
+/// Convert ethabi parame_type to generic param type
+pub fn template_param_where_clause(input: &ParamType, index: usize) -> proc_macro2::TokenStream {
+    let t_ident = syn::Ident::new(&format!("T{index}"), Span::call_site());
+    let u_ident = syn::Ident::new(&format!("U{index}"), Span::call_site());
+    match input {
+        ParamType::Address => {
+            quote! { #t_ident: TryInto<ethabi::Address>, #t_ident::Error: std::fmt::Display + std::fmt::Debug }
+        }
+        ParamType::Bytes => {
+            quote! { #t_ident: TryInto<ethabi::Bytes>, #t_ident::Error: std::fmt::Display + std::fmt::Debug }
+        }
+        ParamType::FixedBytes(32) => {
+            quote! { #t_ident: TryInto<ethabi::Hash>, #t_ident::Error: std::fmt::Display + std::fmt::Debug }
+        }
+        ParamType::FixedBytes(size) => {
+            quote! { #t_ident: TryInto<[u8; #size]> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
+        }
+        ParamType::Int(_) => {
+            quote! { #t_ident: TryInto<ethabi::Int> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
+        }
+        ParamType::Uint(_) => {
+            quote! { #t_ident: TryInto<ethabi::Uint> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
+        }
+        ParamType::Bool => {
+            quote! { #t_ident: TryInto<bool> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
+        }
+        ParamType::String => {
+            quote! { #t_ident: TryInto<String> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
+        }
         ParamType::Array(kind) => {
             let t = rust_type(kind);
             quote! {
@@ -95,7 +145,7 @@ pub fn from_template_param(input: &ParamType, name: &syn::Ident) -> proc_macro2:
         ParamType::FixedArray(_, _) => {
             quote! { (Box::new(#name.into()) as Box<[_]>).into_vec().into_iter().map(Into::into).collect::<Vec<_>>() }
         }
-        _ => quote! {#name.into() },
+        _ => quote! { #name.try_into().map_err(ethers_rs::custom_error)? },
     }
 }
 

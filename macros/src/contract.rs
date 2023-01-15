@@ -181,16 +181,28 @@ impl CodeGen for Contract {
                 pub struct #contract_struture_ident(ethers_rs::ContractContext);
 
                 impl #contract_struture_ident {
-                    pub fn new(address: ethers_rs::Address) -> Self {
-                        Self(ContractContext{address, provider: None, signer: None})
+                    pub fn new<A>(address: A) ->  ethers_rs::Result<Self>
+                    where
+                    A: TryInto<ethers_rs::Address>,
+                    A::Error: std::fmt::Display + std::fmt::Debug,
+                    {
+                        let address = address.try_into().map_err(ethers_rs::custom_error)?;
+
+                        Ok(Self(ContractContext{address, provider: None, signer: None}))
                     }
 
-                    pub fn connect(&self, address: ethers_rs::Address) -> Self {
-                        Self(ContractContext{
+                    pub fn connect<A>(&self, address: A) -> ethers_rs::Result<Self>
+                     where
+                    A: TryInto<ethers_rs::Address>,
+                    A::Error: std::fmt::Display + std::fmt::Debug,
+                    {
+                        let address = address.try_into().map_err(ethers_rs::custom_error)?;
+
+                        Ok(Self(ContractContext{
                             address,
                             provider: self.0.provider.clone(),
                             signer: self.0.signer.clone()
-                        })
+                        }))
                     }
 
                     pub fn with_provider(&self, provider: ethers_rs::Provider) -> Self {

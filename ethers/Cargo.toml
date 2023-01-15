@@ -9,8 +9,9 @@ edition = "2021"
 ethers-macros-rs = {path = "../macros"}
 ethers-utils-rs = {path = "../utils"}
 ethers-providers-rs = {path = "../providers"}
-ethabi = "18.0.0"
+ethabi = {path = "../parity/ethabi"}
 thiserror = "1.0.38"
+rustc-hex = { version = "2.0.1" }
 
 [dev-dependencies]
 dotenv = "0.15.0"
