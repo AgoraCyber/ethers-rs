@@ -1,15 +1,12 @@
 use std::fmt::{Debug, Display};
 
-use ethers_utils_rs::{
-    eth::{Address, BlockHash, Bytecode, Number, Signature, TransactionHash},
-    hex,
-};
 use jsonrpc_rs::RPCResult;
-use types::*;
+
+use ethers_utils_rs::hex;
+use ethers_utils_rs::types::*;
 
 pub mod error;
 pub mod providers;
-pub mod types;
 
 pub use error::ProviderError;
 
@@ -458,7 +455,9 @@ mod tests {
     use jsonrpc_rs::RPCResult;
     use serde_json::json;
 
-    use crate::{providers::http, types::SyncingStatus};
+    use crate::providers::http;
+
+    use ethers_utils_rs::types::*;
 
     #[async_std::test]
     async fn test_block_number() -> RPCResult<()> {

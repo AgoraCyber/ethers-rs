@@ -16,10 +16,44 @@ pub use fee::*;
 mod filter;
 pub use filter::*;
 
+use crate::{hex_def, hex_fixed_def};
+
+// pub type UncleHash = ethabi::Hash;
+// pub type Sha3Hash = ethabi::Hash;
+// pub type BlockHash = ethabi::Hash;
+pub type Address = ethabi::Address;
+// pub type MerkleHash = ethabi::Hash;
+// pub type TransactionHash = ethabi::Hash;
+// pub type TransactionsRoot = ethabi::Hash;
+// pub type ReceiptsRoot = ethabi::Hash;
+// pub type MixHash = ethabi::Hash;
+// pub type Number = ethabi::Uint;
+
+hex_fixed_def!(UncleHash, 32);
+hex_fixed_def!(BlockHash, 32);
+hex_fixed_def!(Sha3Hash, 32);
+// hex_fixed_def!(Address, 20);
+hex_fixed_def!(MerkleHash, 32);
+hex_fixed_def!(TransactionHash, 32);
+hex_def!(BloomFilter);
+hex_fixed_def!(TransactionsRoot, 32);
+hex_fixed_def!(ReceiptsRoot, 32);
+hex_def!(Difficulty);
+hex_def!(Number);
+hex_def!(ExtraData);
+hex_def!(Bytecode);
+hex_def!(Input);
+hex_fixed_def!(MixHash, 32);
+hex_fixed_def!(Nonce, 8);
+hex_fixed_def!(Type, 1);
+hex_fixed_def!(Status, 1);
+hex_fixed_def!(Topic, 32);
+hex_fixed_def!(Signature, 65);
+
 #[cfg(test)]
 mod tests {
 
-    use ethers_utils_rs::eth::Number;
+    use super::Number;
     use serde::{Deserialize, Serialize};
 
     use crate::types::BlockTag;

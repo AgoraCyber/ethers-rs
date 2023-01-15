@@ -34,7 +34,7 @@ pub struct Block {
 
     /// Bloom filter
     #[serde(rename = "logsBloom")]
-    pub logs_bloom: BloomFilter,
+    pub logs_bloom: Option<BloomFilter>,
 
     /// Difficulty
     #[serde(skip_serializing_if = "Option::is_none")]

@@ -1,7 +1,6 @@
-use crate::types::*;
+use super::*;
+use crate::error::UtilsError;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-use crate::error::ProviderError;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
@@ -26,7 +25,7 @@ where
         if !flag {
             Ok(())
         } else {
-            Err(ProviderError::Syncing).map_err(serde::de::Error::custom)
+            Err(UtilsError::Syncing).map_err(serde::de::Error::custom)
         }
     })
 }

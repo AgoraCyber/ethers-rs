@@ -1,7 +1,6 @@
-use crate::types::*;
+use super::*;
+use crate::error::UtilsError;
 use serde::{Deserialize, Serialize};
-
-use crate::error::ProviderError;
 
 /// eth_getBlockByNumber parameter `Block`
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -12,14 +11,14 @@ pub enum BlockNumberOrTag {
 }
 
 impl TryFrom<Number> for BlockNumberOrTag {
-    type Error = ProviderError;
+    type Error = UtilsError;
     fn try_from(value: Number) -> Result<Self, Self::Error> {
         Ok(BlockNumberOrTag::Number(value))
     }
 }
 
 impl TryFrom<BlockTag> for BlockNumberOrTag {
-    type Error = ProviderError;
+    type Error = UtilsError;
     fn try_from(tag: BlockTag) -> Result<Self, Self::Error> {
         Ok(BlockNumberOrTag::Tag(tag))
     }
@@ -43,16 +42,14 @@ pub enum BlockTag {
 }
 
 impl<'a> TryFrom<&'a str> for BlockNumberOrTag {
-    type Error = ProviderError;
+    type Error = UtilsError;
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if value.starts_with("0x") {
-            Ok(BlockNumberOrTag::Number(
-                value.try_into().map_err(|err| ProviderError::Number(err))?,
-            ))
+            Ok(BlockNumberOrTag::Number(value.try_into()?))
         } else {
             Ok(BlockNumberOrTag::Tag(
                 serde_json::from_str(&format!("\"{}\"", value))
-                    .map_err(|err| ProviderError::BlockTag(err))?,
+                    .map_err(|_| UtilsError::BlockTag(value.to_string()))?,
             ))
         }
     }
