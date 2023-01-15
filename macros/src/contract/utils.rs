@@ -1,7 +1,9 @@
+use std::str::FromStr;
+
 use ethabi::{Param, ParamType};
 use heck::ToSnakeCase;
-use proc_macro2::Span;
-use quote::quote;
+use proc_macro2::{Span, TokenStream};
+use quote::{format_ident, quote};
 /// Convert ethabi parame_type to generic param type
 pub fn template_param_type(input: &ParamType, index: usize) -> proc_macro2::TokenStream {
     let t_ident = syn::Ident::new(&format!("T{index}"), Span::call_site());
@@ -27,10 +29,11 @@ pub fn template_param_type(input: &ParamType, index: usize) -> proc_macro2::Toke
                 #t_ident: Into<[#u_ident; #size]>, #u_ident: Into<#t>
             }
         }
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
+        ParamType::Tuple(ref types) => {
+            let types = types.iter().map(|t| rust_type(t)).collect::<Vec<_>>();
+            quote! {
+                #t_ident: Into<(#(#types,)*)>
+            }
         }
     }
 }
@@ -53,10 +56,10 @@ pub fn rust_type(input: &ParamType) -> proc_macro2::TokenStream {
             let t = rust_type(kind);
             quote! { [#t, #size] }
         }
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
+        ParamType::Tuple(ref types) => {
+            let types = types.iter().map(|t| rust_type(t)).collect::<Vec<_>>();
+
+            quote!((#(#types,)*))
         }
     }
 }
@@ -127,10 +130,45 @@ pub fn to_token(name: &proc_macro2::TokenStream, kind: &ParamType) -> proc_macro
                 }
             }
         }
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
+        ParamType::Tuple(ref types) => {
+            let streams = types
+                .iter()
+                .enumerate()
+                .map(|(index, t)| {
+                    let index2 = TokenStream::from_str(&format!("{}", index)).unwrap();
+                    let name = quote! { v.#index2 };
+
+                    let stream = to_token(&name, t);
+
+                    let ident = format_ident!("v_{}", index, span = Span::call_site());
+                    (
+                        quote! {
+                            let #ident = #stream;
+                        },
+                        quote!(#ident),
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            let to_token_streams = streams
+                .iter()
+                .map(|(to_token, _)| to_token)
+                .collect::<Vec<_>>();
+
+            let idents = streams.iter().map(|(_, ident)| ident).collect::<Vec<_>>();
+
+            let types = types.iter().map(|t| rust_type(t)).collect::<Vec<_>>();
+
+            quote! {
+
+                {
+                    let v: (#(#types,)*) = #name;
+
+                    #(#to_token_streams)*
+
+                    ethabi::Token::Tuple(vec![#(#idents,)*])
+                }
+            }
         }
     }
 }
@@ -183,10 +221,48 @@ pub fn from_token(kind: &ParamType, token: &proc_macro2::TokenStream) -> proc_ma
                 }
             }
         }
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
+        ParamType::Tuple(ref types) => {
+            let streams = types
+                .iter()
+                .enumerate()
+                .map(|(index, t)| {
+                    let index2 = TokenStream::from_str(&format!("{}", index)).unwrap();
+
+                    let token = quote! {
+                        v.#index2
+                    };
+
+                    let stream = from_token(t, &token);
+
+                    let ident = format_ident!("v_{}", index, span = Span::call_site());
+                    (
+                        quote! {
+                            let #ident = #stream;
+                        },
+                        quote!(#ident),
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            let to_token_streams = streams
+                .iter()
+                .map(|(to_token, _)| to_token)
+                .collect::<Vec<_>>();
+
+            let idents = streams.iter().map(|(_, ident)| ident).collect::<Vec<_>>();
+
+            let types = types.iter().map(|t| rust_type(t)).collect::<Vec<_>>();
+
+            quote! {
+
+                {
+                    let v:(#(#types,)*) = #token;
+
+                    #(#to_token_streams)*
+
+                    (#(#idents,)*)
+                }
+            }
         }
     }
 }
@@ -252,10 +328,38 @@ pub fn to_syntax_string(param_type: &ethabi::ParamType) -> proc_macro2::TokenStr
             let param_type_quote = to_syntax_string(param_type);
             quote! { ethabi::ParamType::FixedArray(Box::new(#param_type_quote), #x) }
         }
-        ParamType::Tuple(_) => {
-            unimplemented!(
-                "Tuples are not supported. https://github.com/openethereum/ethabi/issues/175"
-            )
+        ParamType::Tuple(ref types) => {
+            let streams = types
+                .iter()
+                .enumerate()
+                .map(|(index, t)| {
+                    let stream = to_syntax_string(t);
+
+                    let ident = format_ident!("v_{}", index, span = Span::call_site());
+                    (
+                        quote! {
+                            let #ident = #stream;
+                        },
+                        quote!(#ident),
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            let to_token_streams = streams
+                .iter()
+                .map(|(to_token, _)| to_token)
+                .collect::<Vec<_>>();
+
+            let idents = streams.iter().map(|(_, ident)| ident).collect::<Vec<_>>();
+
+            quote! {
+
+                {
+                    #(#to_token_streams)*
+
+                    ethabi::ParamType::Tuple(vec![#(#idents,)*])
+                }
+            }
         }
     }
 }
