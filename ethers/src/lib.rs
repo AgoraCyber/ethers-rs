@@ -2,7 +2,7 @@
 pub use ethers_macros_rs::*;
 
 pub use ethabi;
-pub use ethabi::Address;
+pub use ethabi::{Address, Bytes, FixedBytes, Hash, Int, Uint};
 
 pub mod contract;
 

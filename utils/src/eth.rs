@@ -1,9 +1,20 @@
 use crate::{hex_def, hex_fixed_def};
 
+// pub type UncleHash = ethabi::Hash;
+// pub type Sha3Hash = ethabi::Hash;
+// pub type BlockHash = ethabi::Hash;
+pub type Address = ethabi::Address;
+// pub type MerkleHash = ethabi::Hash;
+// pub type TransactionHash = ethabi::Hash;
+// pub type TransactionsRoot = ethabi::Hash;
+// pub type ReceiptsRoot = ethabi::Hash;
+// pub type MixHash = ethabi::Hash;
+// pub type Number = ethabi::Uint;
+
 hex_fixed_def!(UncleHash, 32);
 hex_fixed_def!(BlockHash, 32);
 hex_fixed_def!(Sha3Hash, 32);
-hex_fixed_def!(Address, 20);
+// hex_fixed_def!(Address, 20);
 hex_fixed_def!(MerkleHash, 32);
 hex_fixed_def!(TransactionHash, 32);
 hex_def!(BloomFilter);

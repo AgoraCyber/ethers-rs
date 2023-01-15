@@ -11,3 +11,4 @@ hex = "0.4.3"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4.16"
 thiserror = "1.0.38"
+ethabi = { path = "../parity/ethabi"}
