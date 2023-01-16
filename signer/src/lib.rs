@@ -7,7 +7,6 @@ use ethers_utils_rs::{
 use jsonrpc_rs::RPCResult;
 
 pub mod error;
-pub mod signers;
 mod typed;
 pub use typed::*;
 
