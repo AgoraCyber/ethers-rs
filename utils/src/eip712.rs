@@ -13,6 +13,9 @@ use crate::{hash::keccak256, types::Address};
 /// Custom types for `TypedData`
 pub type Types = BTreeMap<String, Vec<Eip712DomainType>>;
 
+/// `TypedData` value
+pub type Value = BTreeMap<String, serde_json::Value>;
+
 /// Supports parsing numbers as strings
 ///
 /// See <https://github.com/gakonst/ethers-rs/issues/1507>
