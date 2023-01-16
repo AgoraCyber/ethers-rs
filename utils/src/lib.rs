@@ -5,4 +5,6 @@ pub mod hex;
 
 pub mod types;
 
-pub mod typed_data;
+pub mod hash;
+
+pub mod eip712;

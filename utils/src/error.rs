@@ -8,6 +8,6 @@ pub enum UtilsError {
     #[error("Invalid block tag, {0}")]
     BlockTag(String),
 
-    #[error("Parsing sync statuts, failed")]
+    #[error("Parsing sync statuts failed")]
     Syncing,
 }
