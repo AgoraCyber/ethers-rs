@@ -18,6 +18,8 @@ pub use filter::*;
 
 use crate::{error, hash::keccak256, hex::bytes_to_hex, hex_def, hex_fixed_def};
 
+use crate::error::UtilsError;
+
 // pub type UncleHash = ethabi::Hash;
 // pub type Sha3Hash = ethabi::Hash;
 // pub type BlockHash = ethabi::Hash;
@@ -54,21 +56,43 @@ pub type Uint = ethabi::Uint;
 pub type Int = ethabi::Int;
 pub type Hash32 = ethabi::Hash;
 
-/// Convert public key to Address instance.
-pub fn public_key_to_address<B>(pub_key: B) -> Address
-where
-    B: AsRef<[u8]>,
-{
-    let pub_key = pub_key.as_ref();
+pub trait AddressEx {
+    fn from_pub_key(key: [u8; 65]) -> Address {
+        let buf: [u8; 20] = keccak256(&key[1..])[12..]
+            .try_into()
+            .expect("To address array");
 
-    assert_eq!(pub_key.len(), 65, "Public key len must be 65");
+        buf.into()
+    }
 
-    let buf: [u8; 20] = keccak256(&pub_key[1..])[12..]
-        .try_into()
-        .expect("To address array");
+    #[cfg(feature = "rust_crypto")]
+    fn from_pub_key_compressed(key: [u8; 33]) -> Result<Address, UtilsError> {
+        let key = k256::EncodedPoint::from_bytes(&key)
+            .map_err(|err| UtilsError::Address(format!("{}", err)))?;
 
-    buf.into()
+        let key = k256::ecdsa::VerifyingKey::from_encoded_point(&key)
+            .map_err(|err| UtilsError::Address(format!("{}", err)))?;
+
+        Ok(Self::from_pub_key(
+            key.to_encoded_point(false)
+                .as_bytes()
+                .try_into()
+                .expect("Encode uncompress public key"),
+        ))
+    }
+
+    fn from_pub_key_vec(key: Vec<u8>) -> Result<Address, UtilsError> {
+        match key.len() {
+            33 => Ok(Self::from_pub_key(key.try_into().expect(""))),
+            65 => Ok(Self::from_pub_key(key.try_into().expect(""))),
+            _ => Err(UtilsError::Address(
+                "Address public key len either 33 or 65".to_owned(),
+            )),
+        }
+    }
 }
+
+impl AddressEx for Address {}
 
 pub trait Eip55: Sized {
     fn to_checksum_string(&self) -> String;

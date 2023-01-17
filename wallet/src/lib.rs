@@ -6,3 +6,5 @@ pub mod wallet;
 pub type Result<T> = std::result::Result<T, error::WalletError>;
 
 pub use error::WalletError;
+
+pub mod hd_wallet;

@@ -84,12 +84,24 @@ impl<'a> KeyProvider for &'a str {
     }
 }
 
+impl<'a> KeyProvider for &'a [u8] {
+    fn load(&mut self) -> Result<Vec<u8>> {
+        Ok(self.to_vec())
+    }
+}
+
+impl KeyProvider for Vec<u8> {
+    fn load(&mut self) -> Result<Vec<u8>> {
+        Ok(self.clone())
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
     use ethers_utils_rs::{
         hash::keccak256,
-        types::{public_key_to_address, Eip55, Signature},
+        types::{Address, AddressEx, Eip55, Signature},
     };
 
     use super::Wallet;
@@ -102,8 +114,13 @@ mod tests {
             Wallet::new("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
                 .expect("Create wallet from private key");
 
-        let address =
-            public_key_to_address(wallet.public_key(false).expect("Compressed public key"));
+        let address = Address::from_pub_key(
+            wallet
+                .public_key(false)
+                .expect("Public key")
+                .try_into()
+                .expect(""),
+        );
 
         assert_eq!(
             address.to_checksum_string(),
@@ -137,11 +154,13 @@ mod tests {
             .verify(&hashed, &signature.0[0..64])
             .expect("Verify signature"));
 
-        let pub_key = wallet
-            .recover(&hashed, &signature.0[0..64], signature.0[64], false)
-            .expect("Recover public key");
-
-        let address = public_key_to_address(pub_key);
+        let address = Address::from_pub_key(
+            wallet
+                .public_key(false)
+                .expect("Public key")
+                .try_into()
+                .expect(""),
+        );
 
         assert_eq!(
             address.to_checksum_string(),
