@@ -41,8 +41,16 @@ impl Wallet {
     }
 
     /// Recover public key with hashed data, signature and recover id.
-    pub fn recover(&self, hashed: &[u8], signature: &[u8], recover_id: u8) -> Result<Vec<u8>> {
-        unsafe { (self.inner.as_ref().recover)(self.inner, hashed, signature, recover_id) }
+    pub fn recover(
+        &self,
+        hashed: &[u8],
+        signature: &[u8],
+        recover_id: u8,
+        compressed: bool,
+    ) -> Result<Vec<u8>> {
+        unsafe {
+            (self.inner.as_ref().recover)(self.inner, hashed, signature, recover_id, compressed)
+        }
     }
 }
 
@@ -61,7 +69,13 @@ pub trait WalletProvider {
     /// Verify signature with public key and hashed data
     fn verify(&self, hashed: &[u8], signature: &[u8]) -> Result<bool>;
     /// Recover public key with hashed data, signature and recover id.
-    fn recover(&self, hashed: &[u8], signature: &[u8], recover_id: u8) -> Result<Vec<u8>>;
+    fn recover(
+        &self,
+        hashed: &[u8],
+        signature: &[u8],
+        recover_id: u8,
+        compressed: bool,
+    ) -> Result<Vec<u8>>;
 }
 
 impl<'a> KeyProvider for &'a str {
@@ -73,7 +87,10 @@ impl<'a> KeyProvider for &'a str {
 #[cfg(test)]
 mod tests {
 
-    use ethers_utils_rs::types::{public_key_to_address, Eip55};
+    use ethers_utils_rs::{
+        hash::keccak256,
+        types::{public_key_to_address, Eip55, Signature},
+    };
 
     use super::Wallet;
 
@@ -87,6 +104,44 @@ mod tests {
 
         let address =
             public_key_to_address(wallet.public_key(false).expect("Compressed public key"));
+
+        assert_eq!(
+            address.to_checksum_string(),
+            "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+        );
+    }
+
+    #[test]
+    fn test_sign_and_recover() {
+        let _ = pretty_env_logger::try_init();
+
+        let expected = "0xf16ea9a3478698f695fd1401bfe27e9e4a7e8e3da94aa72b021125e31fa899cc573c48ea3fe1d4ab61a9db10c19032026e3ed2dbccba5a178235ac27f94504311c";
+
+        let data = "hello";
+
+        let hashed = format!("\x19Ethereum Signed Message:\n{}{}", data.len(), data);
+
+        let hashed = keccak256(hashed);
+
+        let wallet =
+            Wallet::new("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+                .expect("Create wallet from private key");
+
+        let signature = wallet.sign(&hashed).expect("personal_sign");
+
+        let signature: Signature = signature.try_into().expect("0");
+
+        assert_eq!(expected, signature.to_string());
+
+        assert!(wallet
+            .verify(&hashed, &signature.0[0..64])
+            .expect("Verify signature"));
+
+        let pub_key = wallet
+            .recover(&hashed, &signature.0[0..64], signature.0[64], false)
+            .expect("Recover public key");
+
+        let address = public_key_to_address(pub_key);
 
         assert_eq!(
             address.to_checksum_string(),

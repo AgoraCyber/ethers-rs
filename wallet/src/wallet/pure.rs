@@ -30,17 +30,23 @@ impl LocalWalletRustCrypto {
 }
 
 impl WalletProvider for LocalWalletRustCrypto {
-    fn recover(&self, hashed: &[u8], signature: &[u8], recover_id: u8) -> Result<Vec<u8>> {
-        let sig = Signature::from_der(signature)
+    fn recover(
+        &self,
+        hashed: &[u8],
+        signature: &[u8],
+        recover_id: u8,
+        compressed: bool,
+    ) -> Result<Vec<u8>> {
+        let sig = Signature::try_from(signature)
             .map_err(|err| WalletError::ECDSA(format!("Convert signature error, {}", err)))?;
 
         let recover_id =
-            RecoveryId::from_byte(recover_id).ok_or(WalletError::RecoverId(recover_id))?;
+            RecoveryId::from_byte(recover_id - 27).ok_or(WalletError::RecoverId(recover_id))?;
 
         let key = VerifyingKey::recover_from_prehash(hashed, &sig, recover_id)
             .map_err(|err| WalletError::ECDSA(format!("Recover public key error, {}", err)))?;
 
-        Ok(key.to_encoded_point(true).as_bytes().to_vec())
+        Ok(key.to_encoded_point(compressed).as_bytes().to_vec())
     }
 
     fn sign(&self, hashed: &[u8]) -> Result<Vec<u8>> {
@@ -60,7 +66,7 @@ impl WalletProvider for LocalWalletRustCrypto {
 
         result.append(&mut r.to_vec());
         result.append(&mut s.to_vec());
-        result.push(recid.expect("Recover id").to_byte());
+        result.push(recid.expect("Recover id").to_byte() + 27);
 
         assert_eq!(result.len(), 65);
 
@@ -70,7 +76,7 @@ impl WalletProvider for LocalWalletRustCrypto {
     fn verify(&self, hashed: &[u8], signature: &[u8]) -> Result<bool> {
         let verifying_key = self.sign_key.verifying_key();
 
-        let sig = Signature::from_der(signature)
+        let sig = Signature::try_from(signature)
             .map_err(|err| WalletError::ECDSA(format!("Convert signature error, {}", err)))?;
 
         Ok(verifying_key.verify_prehash(hashed, &sig).is_ok())

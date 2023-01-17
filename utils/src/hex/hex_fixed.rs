@@ -39,7 +39,25 @@ macro_rules! hex_fixed_def {
         impl TryFrom<String> for $name {
             type Error = crate::error::UtilsError;
             fn try_from(value: String) -> Result<Self, Self::Error> {
-                Self::try_from(value.as_ref())
+                Self::try_from(value.as_str())
+            }
+        }
+
+        impl TryFrom<Vec<u8>> for $name {
+            type Error = crate::error::UtilsError;
+            fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+                Ok(Self(value.try_into().map_err(|_| {
+                    crate::error::UtilsError::Hex(hex::FromHexError::InvalidStringLength)
+                })?))
+            }
+        }
+
+        impl<'a> TryFrom<&'a [u8]> for $name {
+            type Error = crate::error::UtilsError;
+            fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
+                Ok(Self(value.try_into().map_err(|_| {
+                    crate::error::UtilsError::Hex(hex::FromHexError::InvalidStringLength)
+                })?))
             }
         }
 

@@ -17,6 +17,7 @@ pub(crate) struct WalletVTable {
         hashed: &[u8],
         signature: &[u8],
         recover_id: u8,
+        compressed: bool,
     ) -> Result<Vec<u8>>,
 }
 
@@ -50,12 +51,13 @@ unsafe fn recover<W: WalletProvider>(
     hashed: &[u8],
     signature: &[u8],
     recover_id: u8,
+    compressed: bool,
 ) -> Result<Vec<u8>> {
     let mut raw = vtable.cast::<WalletInner<W>>();
 
     raw.as_mut()
         .wallet_impl
-        .recover(hashed, signature, recover_id)
+        .recover(hashed, signature, recover_id, compressed)
 }
 
 impl WalletVTable {
