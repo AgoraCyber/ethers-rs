@@ -5,7 +5,7 @@ pub fn keccak256<S>(bytes: S) -> [u8; 32]
 where
     S: AsRef<[u8]>,
 {
-    let mut hasher = Keccak256::default();
+    let mut hasher = Keccak256::new();
 
     hasher.update(bytes.as_ref());
 

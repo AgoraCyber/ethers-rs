@@ -16,7 +16,7 @@ pub use fee::*;
 mod filter;
 pub use filter::*;
 
-use crate::{hex_def, hex_fixed_def};
+use crate::{error, hash::keccak256, hex::bytes_to_hex, hex_def, hex_fixed_def};
 
 // pub type UncleHash = ethabi::Hash;
 // pub type Sha3Hash = ethabi::Hash;
@@ -50,15 +50,83 @@ hex_fixed_def!(Status, 1);
 hex_fixed_def!(Topic, 32);
 hex_fixed_def!(Signature, 65);
 
+pub type Uint = ethabi::Uint;
+pub type Int = ethabi::Int;
+pub type Hash32 = ethabi::Hash;
+
+/// Convert public key to Address instance.
+pub fn public_key_to_address<B>(pub_key: B) -> Address
+where
+    B: AsRef<[u8]>,
+{
+    let pub_key = pub_key.as_ref();
+
+    assert_eq!(pub_key.len(), 65, "Public key len must be 65");
+
+    let buf: [u8; 20] = keccak256(&pub_key[1..])[12..]
+        .try_into()
+        .expect("To address array");
+
+    buf.into()
+}
+
+pub trait Eip55: Sized {
+    fn to_checksum_string(&self) -> String;
+
+    fn from_checksum_string(source: &str) -> Result<Self, error::UtilsError>;
+}
+
+impl Eip55 for Address {
+    fn to_checksum_string(&self) -> String {
+        let mut data = bytes_to_hex(self.as_bytes());
+
+        let digest = keccak256(&data.as_bytes()[2..]);
+
+        let addr = unsafe { &mut data.as_bytes_mut()[2..] };
+
+        for i in 0..addr.len() {
+            let byte = digest[i / 2];
+            let nibble = 0xf & if i % 2 == 0 { byte >> 4 } else { byte };
+            if nibble >= 8 {
+                addr[i] = addr[i].to_ascii_uppercase();
+            }
+        }
+
+        data
+    }
+
+    fn from_checksum_string(source: &str) -> Result<Self, error::UtilsError> {
+        let address: Address =
+            Self::try_from(source).map_err(|err| error::UtilsError::Address(format!("{}", err)))?;
+
+        let expected = address.to_checksum_string();
+
+        if expected != source {
+            return Err(error::UtilsError::Address(format!(
+                "Expect address {}",
+                expected
+            )));
+        }
+
+        Ok(address)
+    }
+}
+
 #[cfg(test)]
 mod tests {
 
-    use super::Number;
+    use super::{Address, Eip55, Number};
     use serde::{Deserialize, Serialize};
 
     use crate::types::BlockTag;
 
     use super::{Block, BlockNumberOrTag, Transaction};
+
+    #[test]
+    fn test_address_checksum() {
+        Address::from_checksum_string("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266")
+            .expect("From checksum string");
+    }
 
     fn check_serde<'de, T: Serialize + Deserialize<'de>>(tag: &str, data: &'de str) {
         // let _: serde_json::Value =

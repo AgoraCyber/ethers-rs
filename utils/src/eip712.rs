@@ -599,9 +599,9 @@ fn parse_field_type(source: &str) -> Result<ParamType, Eip712Error> {
 /// Parse token into Eip712 compliant ABI encoding
 pub fn encode_eip712_type(token: Token) -> Token {
     match token {
-        Token::Bytes(t) => Token::Uint(Uint::from(keccak256(t))),
+        Token::Bytes(t) => Token::Uint(Uint::from(keccak256(&t))),
         Token::FixedBytes(t) => Token::Uint(Uint::from(&t[..])),
-        Token::String(t) => Token::Uint(Uint::from(keccak256(t))),
+        Token::String(t) => Token::Uint(Uint::from(keccak256(t.as_bytes()))),
         Token::Bool(t) => {
             // Boolean false and true are encoded as uint256 values 0 and 1 respectively
             Token::Uint(Uint::from(t as i32))
@@ -610,13 +610,13 @@ pub fn encode_eip712_type(token: Token) -> Token {
             // Integer values are sign-extended to 256-bit and encoded in big endian order.
             Token::Uint(t)
         }
-        Token::Array(tokens) => Token::Uint(Uint::from(keccak256(encode(
+        Token::Array(tokens) => Token::Uint(Uint::from(keccak256(&encode(
             &tokens
                 .into_iter()
                 .map(encode_eip712_type)
                 .collect::<Vec<Token>>(),
         )))),
-        Token::FixedArray(tokens) => Token::Uint(Uint::from(keccak256(encode(
+        Token::FixedArray(tokens) => Token::Uint(Uint::from(keccak256(&encode(
             &tokens
                 .into_iter()
                 .map(encode_eip712_type)
@@ -628,7 +628,7 @@ pub fn encode_eip712_type(token: Token) -> Token {
                 .map(encode_eip712_type)
                 .collect::<Vec<Token>>();
             let encoded = encode(&tokens);
-            Token::Uint(Uint::from(keccak256(encoded)))
+            Token::Uint(Uint::from(keccak256(&encoded)))
         }
         _ => {
             // Return the ABI encoded token;

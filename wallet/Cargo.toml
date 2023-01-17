@@ -1,0 +1,22 @@
+[package]
+name = "ethers-wallet-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+k256 = {version = "0.12.0", optional = true}
+ethers-utils-rs = {path = "../utils"}
+log = "0.4.16"
+thiserror = "1.0.38"
+sha2 = {version = "0.10.6",optional = true}
+
+[features]
+default = ["pure"]
+pure = ["k256","sha2"]
+openssl = []
+
+[dev-dependencies]
+dotenv = "0.15.0"
+pretty_env_logger = "0.4.0"

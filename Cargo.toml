@@ -3,7 +3,8 @@ members = [
     "providers","utils",
     "ethers","macros",
     "parity/ethabi",
-    "signer"
+    "signer",
+    "wallet"
     # "parity/ethereum-types",
     # "parity/fixed-hash",
     # "parity/primitive-types",

@@ -10,4 +10,7 @@ pub enum UtilsError {
 
     #[error("Parsing sync statuts failed")]
     Syncing,
+
+    #[error("Parse address error, {0}")]
+    Address(String),
 }

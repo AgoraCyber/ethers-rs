@@ -17,7 +17,7 @@ impl Default for SyncingStatus {
     }
 }
 
-fn from_bool<'de, D>(d: D) -> Result<(), D::Error>
+fn from_bool<'de, D>(d: D) -> std::result::Result<(), D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -30,7 +30,7 @@ where
     })
 }
 
-fn as_bool<S>(serializer: S) -> Result<S::Ok, S::Error>
+fn as_bool<S>(serializer: S) -> std::result::Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
