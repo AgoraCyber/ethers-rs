@@ -29,3 +29,7 @@ openssl = []
 [dev-dependencies]
 dotenv = "0.15.0"
 pretty_env_logger = "0.4.0"
+rdbc_sqlite3 = {git = "https://github.com/linq-rs/rdbc-sqlite3.git"}
+rdbc = {git = "https://github.com/linq-rs/rdbc.git"}
+async-std = {version = "1.11.0", features = ["attributes", "default"]}
+anyhow = "1.0.68"
