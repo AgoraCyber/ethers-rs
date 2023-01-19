@@ -1,81 +1,22 @@
 //! ethers-rs wallet facade
 //!
 
-use std::ptr::NonNull;
-
 use ethers_utils_rs::hex;
 
-use crate::{vtable::WalletVTable, Result, WalletError};
+use crate::{Result, WalletError};
 
 #[cfg(feature = "pure")]
 mod pure;
+#[cfg(feature = "pure")]
+pub use pure::LocalWalletRustCrypto as Wallet;
 
 #[cfg(feature = "openssl")]
 mod openssl;
-
-/// Blockchain in memeory wallet instance.
-pub struct Wallet {
-    pub(crate) inner: NonNull<WalletVTable>,
-}
-
-impl Wallet {
-    pub fn new<P: KeyProvider>(provider: P) -> Result<Self> {
-        Ok(Self::new_with_impl(pure::LocalWalletRustCrypto::new(
-            provider,
-        )?))
-    }
-
-    /// Get public key data .
-    pub fn public_key(&self, compressed: bool) -> Result<Vec<u8>> {
-        unsafe { (self.inner.as_ref().public_key)(self.inner, compressed) }
-    }
-
-    /// Sign provider hashed data.
-    pub fn sign(&self, hashed: &[u8]) -> Result<Vec<u8>> {
-        unsafe { (self.inner.as_ref().sign)(self.inner, hashed) }
-    }
-
-    /// Verify signature with public key and hashed data
-    pub fn verify(&self, hashed: &[u8], signature: &[u8]) -> Result<bool> {
-        unsafe { (self.inner.as_ref().verify)(self.inner, hashed, signature) }
-    }
-
-    /// Recover public key with hashed data, signature and recover id.
-    pub fn recover(
-        &self,
-        hashed: &[u8],
-        signature: &[u8],
-        recover_id: u8,
-        compressed: bool,
-    ) -> Result<Vec<u8>> {
-        unsafe {
-            (self.inner.as_ref().recover)(self.inner, hashed, signature, recover_id, compressed)
-        }
-    }
-}
 
 /// Private key provider trait
 pub trait KeyProvider {
     /// Load private key to memory
     fn load(&mut self) -> Result<Vec<u8>>;
-}
-
-/// Wallet implementation trait.
-pub trait WalletProvider {
-    fn public_key(&self, compressed: bool) -> Result<Vec<u8>>;
-    /// Sign provider hashed data.
-    fn sign(&self, hashed: &[u8]) -> Result<Vec<u8>>;
-
-    /// Verify signature with public key and hashed data
-    fn verify(&self, hashed: &[u8], signature: &[u8]) -> Result<bool>;
-    /// Recover public key with hashed data, signature and recover id.
-    fn recover(
-        &self,
-        hashed: &[u8],
-        signature: &[u8],
-        recover_id: u8,
-        compressed: bool,
-    ) -> Result<Vec<u8>>;
 }
 
 impl<'a> KeyProvider for &'a str {

@@ -1,5 +1,4 @@
 pub mod error;
-mod vtable;
 pub mod wallet;
 
 /// Helper `Result` structure for wallet crate.

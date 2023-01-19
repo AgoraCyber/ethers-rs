@@ -11,7 +11,7 @@ use sha2::Sha256;
 
 use crate::{Result, WalletError};
 
-use super::{KeyProvider, WalletProvider};
+use super::KeyProvider;
 
 pub struct LocalWalletRustCrypto {
     sign_key: ecdsa::SigningKey,
@@ -29,8 +29,8 @@ impl LocalWalletRustCrypto {
     }
 }
 
-impl WalletProvider for LocalWalletRustCrypto {
-    fn recover(
+impl LocalWalletRustCrypto {
+    pub fn recover(
         &self,
         hashed: &[u8],
         signature: &[u8],
@@ -49,7 +49,7 @@ impl WalletProvider for LocalWalletRustCrypto {
         Ok(key.to_encoded_point(compressed).as_bytes().to_vec())
     }
 
-    fn sign(&self, hashed: &[u8]) -> Result<Vec<u8>> {
+    pub fn sign(&self, hashed: &[u8]) -> Result<Vec<u8>> {
         let z = bits2field::<Secp256k1>(hashed)
             .map_err(|err| WalletError::ECDSA(format!("Convert bits to field error, {}", err)))?;
 
@@ -73,7 +73,7 @@ impl WalletProvider for LocalWalletRustCrypto {
         Ok(result)
     }
 
-    fn verify(&self, hashed: &[u8], signature: &[u8]) -> Result<bool> {
+    pub fn verify(&self, hashed: &[u8], signature: &[u8]) -> Result<bool> {
         let verifying_key = self.sign_key.verifying_key();
 
         let sig = Signature::try_from(signature)
@@ -82,7 +82,7 @@ impl WalletProvider for LocalWalletRustCrypto {
         Ok(verifying_key.verify_prehash(hashed, &sig).is_ok())
     }
 
-    fn public_key(&self, comppressed: bool) -> Result<Vec<u8>> {
+    pub fn public_key(&self, comppressed: bool) -> Result<Vec<u8>> {
         Ok(self
             .sign_key
             .verifying_key()
