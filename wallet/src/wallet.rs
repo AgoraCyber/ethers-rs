@@ -8,7 +8,7 @@ use crate::{Result, WalletError};
 #[cfg(feature = "pure")]
 mod pure;
 #[cfg(feature = "pure")]
-pub use pure::LocalWalletRustCrypto as Wallet;
+pub type Wallet = pure::LocalWalletRustCrypto;
 
 #[cfg(feature = "openssl")]
 mod openssl;
@@ -55,13 +55,9 @@ mod tests {
             Wallet::new("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
                 .expect("Create wallet from private key");
 
-        let address = Address::from_pub_key(
-            wallet
-                .public_key(false)
-                .expect("Public key")
-                .try_into()
-                .expect(""),
-        );
+        let address =
+            Address::from_pub_key(wallet.public_key(false).expect("Public key").as_slice())
+                .expect("Address from publick key");
 
         assert_eq!(
             address.to_checksum_string(),
@@ -95,13 +91,9 @@ mod tests {
             .verify(&hashed, &signature.0[0..64])
             .expect("Verify signature"));
 
-        let address = Address::from_pub_key(
-            wallet
-                .public_key(false)
-                .expect("Public key")
-                .try_into()
-                .expect(""),
-        );
+        let address =
+            Address::from_pub_key(wallet.public_key(false).expect("Public key").as_slice())
+                .expect("Address from publick key");
 
         assert_eq!(
             address.to_checksum_string(),

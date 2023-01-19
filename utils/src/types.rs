@@ -57,34 +57,46 @@ pub type Int = ethabi::Int;
 pub type Hash32 = ethabi::Hash;
 
 pub trait AddressEx {
-    fn from_pub_key(key: [u8; 65]) -> Address {
+    fn from_pub_key<K>(key: K) -> anyhow::Result<Address>
+    where
+        K: TryInto<[u8; 65]>,
+        K::Error: std::error::Error + Send + Sync + 'static,
+    {
+        let key = key.try_into()?;
+
         let buf: [u8; 20] = keccak256(&key[1..])[12..]
             .try_into()
             .expect("To address array");
 
-        buf.into()
+        Ok(buf.into())
     }
 
     #[cfg(feature = "rust_crypto")]
-    fn from_pub_key_compressed(key: [u8; 33]) -> anyhow::Result<Address> {
+    fn from_pub_key_compressed<K>(key: K) -> anyhow::Result<Address>
+    where
+        K: TryInto<[u8; 33]>,
+        K::Error: std::error::Error + Send + Sync + 'static,
+    {
+        let key = key.try_into()?;
+
         let key = k256::EncodedPoint::from_bytes(&key)
             .map_err(|err| UtilsError::Address(format!("{}", err)))?;
 
         let key = k256::ecdsa::VerifyingKey::from_encoded_point(&key)
             .map_err(|err| UtilsError::Address(format!("{}", err)))?;
 
-        Ok(Self::from_pub_key(
-            key.to_encoded_point(false)
-                .as_bytes()
-                .try_into()
-                .expect("Encode uncompress public key"),
-        ))
+        Self::from_pub_key(key.to_encoded_point(false).as_bytes())
     }
 
-    fn from_pub_key_vec(key: Vec<u8>) -> anyhow::Result<Address> {
+    fn from_pub_key_vec<S>(key: S) -> anyhow::Result<Address>
+    where
+        S: AsRef<[u8]>,
+    {
+        let key = key.as_ref();
+
         match key.len() {
-            33 => Ok(Self::from_pub_key(key.try_into().expect(""))),
-            65 => Ok(Self::from_pub_key(key.try_into().expect(""))),
+            33 => Self::from_pub_key_compressed(key),
+            65 => Self::from_pub_key(key),
             _ => {
                 Err(UtilsError::Address("Address public key len either 33 or 65".to_owned()).into())
             }
@@ -96,13 +108,7 @@ pub trait AddressEx {
         let pk = k256::ecdsa::SigningKey::from_bytes(key)
             .map_err(|err| UtilsError::Address(format!("{}", err)))?;
 
-        Ok(Self::from_pub_key(
-            pk.verifying_key()
-                .to_encoded_point(false)
-                .as_bytes()
-                .try_into()
-                .expect(""),
-        ))
+        Self::from_pub_key(pk.verifying_key().to_encoded_point(false).as_bytes())
     }
 }
 

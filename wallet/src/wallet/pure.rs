@@ -13,6 +13,7 @@ use crate::{Result, WalletError};
 
 use super::KeyProvider;
 
+#[derive(Clone)]
 pub struct LocalWalletRustCrypto {
     sign_key: ecdsa::SigningKey,
 }
