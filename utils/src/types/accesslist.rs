@@ -1,7 +1,7 @@
 use crate::types::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AccessList {
     /// address that the transaction plans to access
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -12,7 +12,7 @@ pub struct AccessList {
     pub storage_keys: Option<Vec<Sha3Hash>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct AccessListResult {
     /// Access list created
     #[serde(rename = "accessList")]

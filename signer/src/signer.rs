@@ -2,7 +2,7 @@ use std::fmt::{Debug, Display};
 
 use ethers_utils_rs::{
     eip712::{self, EIP712Domain},
-    types::{Bytecode, Transaction},
+    types::{Bytecode, Signature, Transaction},
 };
 use jsonrpc_rs::RPCResult;
 
@@ -18,7 +18,7 @@ impl Signer {
     }
 
     /// Returns the signed transaction of the parameter `transaction_request`
-    pub async fn sign_eth_transaction<T>(&mut self, transaction_request: T) -> RPCResult<Bytecode>
+    pub async fn sign_eth_transaction<T>(&mut self, transaction_request: T) -> RPCResult<Signature>
     where
         T: TryInto<Transaction>,
         T::Error: Display + Debug,
@@ -39,7 +39,7 @@ impl Signer {
         types: T,
         primary_type: S,
         value: V,
-    ) -> RPCResult<Bytecode>
+    ) -> RPCResult<Signature>
     where
         S: AsRef<str>,
         D: TryInto<EIP712Domain>,

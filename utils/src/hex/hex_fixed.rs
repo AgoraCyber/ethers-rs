@@ -60,6 +60,21 @@ macro_rules! hex_fixed_def {
             }
         }
 
+        impl From<[u8; $len]> for $name {
+            fn from(value: [u8; $len]) -> Self {
+                Self(value)
+            }
+        }
+
+        impl<'a> AsRef<[u8]> for $name
+        where
+            Self: 'a,
+        {
+            fn as_ref(&self) -> &[u8] {
+                self.0.as_slice()
+            }
+        }
+
         impl $name {
             /// Convert `$name` instance to hex string.
             pub fn to_string(&self) -> String {
@@ -73,6 +88,12 @@ macro_rules! hex_fixed_def {
                 S: serde::Serializer,
             {
                 serializer.serialize_str(&self.to_string())
+            }
+        }
+
+        impl $crate::rlp::Encodable for $name {
+            fn rlp_append(&self, s: &mut $crate::rlp::RlpStream) {
+                s.append(&self.0.as_slice());
             }
         }
 

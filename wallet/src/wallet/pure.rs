@@ -1,3 +1,4 @@
+use ethers_utils_rs::types::Number;
 use k256::{
     ecdsa::{
         self,
@@ -31,26 +32,36 @@ impl LocalWalletRustCrypto {
 }
 
 impl LocalWalletRustCrypto {
-    pub fn recover(
+    pub fn recover<H>(
         &self,
-        hashed: &[u8],
-        signature: &[u8],
-        recover_id: u8,
+        hashed: H,
+        signature: ethers_utils_rs::types::Signature,
         compressed: bool,
-    ) -> Result<Vec<u8>> {
-        let sig = Signature::try_from(signature)
+    ) -> anyhow::Result<Vec<u8>>
+    where
+        H: AsRef<[u8]>,
+    {
+        let sig = Signature::try_from(&signature.0[1..])
             .map_err(|err| WalletError::ECDSA(format!("Convert signature error, {}", err)))?;
+
+        let recover_id = signature.0[0];
 
         let recover_id =
             RecoveryId::from_byte(recover_id - 27).ok_or(WalletError::RecoverId(recover_id))?;
 
-        let key = VerifyingKey::recover_from_prehash(hashed, &sig, recover_id)
+        let key = VerifyingKey::recover_from_prehash(hashed.as_ref(), &sig, recover_id)
             .map_err(|err| WalletError::ECDSA(format!("Recover public key error, {}", err)))?;
 
         Ok(key.to_encoded_point(compressed).as_bytes().to_vec())
     }
 
-    pub fn sign(&self, hashed: &[u8]) -> Result<Vec<u8>> {
+    /// Sign hashed data and returns signature
+    pub fn sign<S>(&self, hashed: S) -> anyhow::Result<ethers_utils_rs::types::Signature>
+    where
+        S: AsRef<[u8]>,
+    {
+        let hashed = hashed.as_ref();
+
         let z = bits2field::<Secp256k1>(hashed)
             .map_err(|err| WalletError::ECDSA(format!("Convert bits to field error, {}", err)))?;
 
@@ -65,25 +76,38 @@ impl LocalWalletRustCrypto {
 
         let mut result = vec![];
 
+        result.push(recid.expect("Recover id").to_byte() + 27);
         result.append(&mut r.to_vec());
         result.append(&mut s.to_vec());
-        result.push(recid.expect("Recover id").to_byte() + 27);
 
         assert_eq!(result.len(), 65);
 
-        Ok(result)
+        Ok(result.try_into()?)
     }
 
-    pub fn verify(&self, hashed: &[u8], signature: &[u8]) -> Result<bool> {
+    pub fn verify<R, S>(&self, hashed: &[u8], r: R, s: S) -> anyhow::Result<bool>
+    where
+        R: TryInto<Number>,
+        S: TryInto<Number>,
+        R::Error: std::error::Error + Sync + Send + 'static,
+        S::Error: std::error::Error + Sync + Send + 'static,
+    {
+        let r = r.try_into()?;
+        let mut s = s.try_into()?;
+
+        let mut signature = r.0;
+
+        signature.append(&mut s.0);
+
         let verifying_key = self.sign_key.verifying_key();
 
-        let sig = Signature::try_from(signature)
+        let sig = Signature::try_from(signature.as_slice())
             .map_err(|err| WalletError::ECDSA(format!("Convert signature error, {}", err)))?;
 
         Ok(verifying_key.verify_prehash(hashed, &sig).is_ok())
     }
 
-    pub fn public_key(&self, comppressed: bool) -> Result<Vec<u8>> {
+    pub fn public_key(&self, comppressed: bool) -> anyhow::Result<Vec<u8>> {
         Ok(self
             .sign_key
             .verifying_key()

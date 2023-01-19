@@ -5,6 +5,7 @@ mod block_num_tag;
 pub use block_num_tag::*;
 
 mod syncing;
+
 pub use syncing::*;
 
 mod accesslist;
@@ -56,7 +57,9 @@ pub type Uint = ethabi::Uint;
 pub type Int = ethabi::Int;
 pub type Hash32 = ethabi::Hash;
 
+/// Extend `Address` structure, add some usefull helper fns.
 pub trait AddressEx {
+    /// Create address from public key.
     fn from_pub_key<K>(key: K) -> anyhow::Result<Address>
     where
         K: TryInto<[u8; 65]>,
@@ -71,6 +74,7 @@ pub trait AddressEx {
         Ok(buf.into())
     }
 
+    /// Create address from compressed public key.
     #[cfg(feature = "rust_crypto")]
     fn from_pub_key_compressed<K>(key: K) -> anyhow::Result<Address>
     where
@@ -88,7 +92,8 @@ pub trait AddressEx {
         Self::from_pub_key(key.to_encoded_point(false).as_bytes())
     }
 
-    fn from_pub_key_vec<S>(key: S) -> anyhow::Result<Address>
+    /// Create address from `AsRef<[u8]>`, and auto detecting public key type.
+    fn from_any_pub_key<S>(key: S) -> anyhow::Result<Address>
     where
         S: AsRef<[u8]>,
     {
@@ -103,6 +108,7 @@ pub trait AddressEx {
         }
     }
 
+    /// Create address from private key
     #[cfg(feature = "rust_crypto")]
     fn from_private_key(key: &[u8]) -> anyhow::Result<Address> {
         let pk = k256::ecdsa::SigningKey::from_bytes(key)
@@ -150,6 +156,23 @@ impl Eip55 for Address {
         }
 
         Ok(address)
+    }
+}
+
+impl Signature {
+    /// Extract signature v
+    pub fn v(&self) -> Number {
+        self.0[0..1].into()
+    }
+
+    /// Extract signature r
+    pub fn r(&self) -> Number {
+        self.0[1..33].into()
+    }
+
+    /// Extract signature s
+    pub fn s(&self) -> Number {
+        self.0[33..].into()
     }
 }
 

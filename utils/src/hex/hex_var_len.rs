@@ -23,6 +23,12 @@ macro_rules! hex_def {
             }
         }
 
+        impl From<&[u8]> for $name {
+            fn from(value: &[u8]) -> Self {
+                Self(value.to_owned())
+            }
+        }
+
         impl TryFrom<&str> for $name {
             type Error = $crate::anyhow::Error;
 
@@ -36,7 +42,13 @@ macro_rules! hex_def {
         impl TryFrom<String> for $name {
             type Error = $crate::anyhow::Error;
             fn try_from(value: String) -> Result<Self, Self::Error> {
-                Self::try_from(value.as_ref())
+                Self::try_from(value.as_str())
+            }
+        }
+
+        impl $crate::rlp::Encodable for $name {
+            fn rlp_append(&self, s: &mut $crate::rlp::RlpStream) {
+                s.append(&self.0.as_slice());
             }
         }
 

@@ -13,4 +13,7 @@ pub enum UtilsError {
 
     #[error("Parse address error, {0}")]
     Address(String),
+
+    #[error("Invalid transaction type {0}")]
+    InvalidTypedTransaction(String),
 }

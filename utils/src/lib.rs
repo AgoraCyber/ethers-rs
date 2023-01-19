@@ -11,3 +11,5 @@ pub mod eip712;
 
 // pub type Result<T> = std::result::Result<T, error::UtilsError>;
 pub use anyhow;
+
+pub mod rlp;

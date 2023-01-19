@@ -2,7 +2,7 @@
 
 use ethers_utils_rs::{
     eip712::TypedData,
-    types::{Address, AddressEx, Bytecode, Eip55, Transaction},
+    types::{Address, AddressEx, Bytecode, Eip55, Signature, Transaction},
 };
 use ethers_wallet_rs::wallet::Wallet;
 use futures::{
@@ -12,7 +12,7 @@ use futures::{
     task::SpawnExt,
     StreamExt,
 };
-use jsonrpc_rs::{channel::TransportChannel, RPCData, RPCResult, Server};
+use jsonrpc_rs::{channel::TransportChannel, map_error, RPCData, RPCResult, Server};
 use once_cell::sync::OnceCell;
 
 use crate::signer::Signer;
@@ -88,21 +88,22 @@ impl WalletSigner for Wallet {
 
             let wallet = self.clone();
 
-            server.async_handle("signer_ethTransaction", move |tx: Transaction| {
+            #[allow(unused_parens)]
+            server.async_handle("signer_ethTransaction", move |tx| {
                 sign_transaction(wallet.clone(), tx)
             });
 
             let wallet = self.clone();
 
-            server.async_handle("signer_typedData", move |typed_data: TypedData| {
+            #[allow(unused_parens)]
+            server.async_handle("signer_typedData", move |typed_data| {
                 sign_typed_data(wallet.clone(), typed_data)
             });
 
             let wallet = self.clone();
 
-            server.async_handle("signer_decrypt", move |data: Bytecode| {
-                decrypt(wallet.clone(), data)
-            });
+            #[allow(unused_parens)]
+            server.async_handle("signer_decrypt", move |data| decrypt(wallet.clone(), data));
 
             server.accept(server_transport);
 
@@ -117,8 +118,12 @@ impl WalletSigner for Wallet {
 }
 
 #[allow(unused)]
-async fn sign_transaction(wallet: Wallet, t: Transaction) -> RPCResult<Option<Bytecode>> {
-    unimplemented!()
+async fn sign_transaction(wallet: Wallet, t: Transaction) -> RPCResult<Option<Signature>> {
+    let hashed = t.sighash();
+
+    let signature = wallet.sign(hashed).map_err(map_error)?;
+
+    Ok(Some(signature.into()))
 }
 
 #[allow(unused)]
@@ -133,6 +138,8 @@ async fn decrypt(wallet: Wallet, data: Bytecode) -> RPCResult<Option<Bytecode>> 
 
 #[cfg(test)]
 mod tests {
+
+    use ethers_utils_rs::types::Transaction;
     use ethers_wallet_rs::wallet::Wallet;
     use serde_json::json;
 
@@ -150,9 +157,30 @@ mod tests {
             .try_into_signer()
             .expect("Try convert wallet into signer");
 
-        signer
-            .sign_eth_transaction(json!({}))
+        let tx: Transaction = json!({
+            "nonce": "0x1",
+            "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "value":"0x1",
+            "input":"0x",
+            "gas":"0x60000",
+            "gasPrice": "0x60000111"
+
+        })
+        .try_into()
+        .expect("Create tx");
+
+        let signature = signer
+            .sign_eth_transaction(tx.clone())
             .await
             .expect("Sign tx");
+
+        log::debug!("v {}", signature.v());
+        log::debug!("r {}", signature.r());
+        log::debug!("s {}", signature.s());
+
+        assert_eq!(
+            "0xf864018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c801801ba0c348ad24113ab8abe314937604694c135f58d5d93c9ec6c5a9fb28671ef68423a070e70600040a09f62a766d9744798ac8b459a85e6e3bfd3fd636118cb62126fe",
+            tx.rlp_signed(&signature).to_string()
+        );
     }
 }
