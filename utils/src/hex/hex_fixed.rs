@@ -2,7 +2,7 @@
 macro_rules! hex_fixed_def {
     ($name:ident,$len:literal) => {
         /// 32 bytes $name
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $name(pub [u8; $len]);
 
         impl Default for $name {

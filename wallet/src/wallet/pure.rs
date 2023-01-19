@@ -19,7 +19,7 @@ pub struct LocalWalletRustCrypto {
 
 impl LocalWalletRustCrypto {
     /// Create new local wallet from key provider
-    pub fn new<P: KeyProvider>(mut provider: P) -> Result<Self> {
+    pub fn new<P: KeyProvider>(provider: P) -> Result<Self> {
         let key_data = provider.load()?;
 
         let sign_key = ecdsa::SigningKey::from_bytes(&key_data)

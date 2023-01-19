@@ -1,6 +1,6 @@
 use std::{collections::HashMap, io::Write, str::FromStr};
 
-use rand::{rngs::OsRng, RngCore};
+use rand::{rngs::OsRng, CryptoRng, Rng};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 
@@ -51,39 +51,6 @@ impl FromStr for Dictionary {
     }
 }
 
-/// The Generator of entropy for random mnemonic
-pub trait EntropyGenerator<const LEN: usize> {
-    fn gen() -> Result<[u8; LEN], Bip39Error>;
-}
-
-/// Generator using [`rand::rngs::OsRng`] to generate `entropy`
-pub struct OsrngEntropyGenerator;
-
-impl<const LEN: usize> EntropyGenerator<LEN> for OsrngEntropyGenerator {
-    fn gen() -> Result<[u8; LEN], Bip39Error> {
-        if LEN % 4 != 0 {
-            return Err(Bip39Error::InvalidEntropyLength(LEN));
-        }
-
-        let mut buff = [0; LEN];
-
-        for i in 0..LEN / 4 {
-            let random_u32 = OsRng.next_u32();
-
-            log::debug!("generate random u32 {}", random_u32);
-
-            let bytes = random_u32.to_be_bytes();
-
-            buff[i] = bytes[0];
-            buff[i * 4 + 1] = bytes[1];
-            buff[i * 4 + 2] = bytes[2];
-            buff[i * 4 + 3] = bytes[3];
-        }
-
-        Ok(buff)
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Bip39Generator {
     dic: Dictionary,
@@ -95,18 +62,23 @@ impl Bip39Generator {
     }
 
     pub fn gen_mnemonic<const LEN: usize>(&self) -> Result<String, Bip39Error> {
-        self.gen_mnemonic_with::<OsrngEntropyGenerator, LEN>()
+        self.gen_mnemonic_with::<rand::rngs::OsRng, LEN>(&mut OsRng)
     }
 
-    pub fn gen_mnemonic_with<EG, const LEN: usize>(&self) -> Result<String, Bip39Error>
+    pub fn gen_mnemonic_with<EG, const LEN: usize>(
+        &self,
+        rng: &mut EG,
+    ) -> Result<String, Bip39Error>
     where
-        EG: EntropyGenerator<LEN>,
+        EG: CryptoRng + Rng,
     {
         if LEN < 16 || LEN > 64 || LEN % 4 != 0 {
             return Err(Bip39Error::InvalidEntropyLength(LEN));
         }
 
-        let entropy = EG::gen()?;
+        let mut entropy = [0; LEN];
+
+        rng.fill_bytes(&mut entropy);
 
         self.mnemonic_from_entropy(&entropy)
     }

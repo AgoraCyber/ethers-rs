@@ -14,16 +14,21 @@ ethers-utils-rs = {path = "../utils"}
 serde_json = "^1.0"
 num = "^0.4"
 rand = {version = "^0.8.5", features = ["getrandom"]}
+uuid = { version = "1.2.2", features = ["serde", "v4"] }
 
 sha2 = {version = "0.10.6",optional = true}
 hmac = {version = "0.12.1", optional = true}
 k256 = {version = "^0.12.0", optional = true}
 serde = {version = "1.0.147", features = ["derive"] }
-
+scrypt = { version = "0.10.0", optional = true, default-features = false }
+sha3 = {version = "0.10.6", optional = true}
+aes = {version = "0.8.2", optional = true}
+ctr = {version = "0.9.2", optional = true}
+anyhow = "1.0.68"
 
 [features]
 default = ["pure"]
-pure = ["k256","sha2","ethers-utils-rs/rust_crypto","hmac"]
+pure = ["k256","sha2","ethers-utils-rs/rust_crypto","hmac","scrypt","sha3","ctr","aes"]
 openssl = []
 
 [dev-dependencies]
@@ -32,4 +37,3 @@ pretty_env_logger = "0.4.0"
 rdbc_sqlite3 = {git = "https://github.com/linq-rs/rdbc-sqlite3.git"}
 rdbc = {git = "https://github.com/linq-rs/rdbc.git"}
 async-std = {version = "1.11.0", features = ["attributes", "default"]}
-anyhow = "1.0.68"

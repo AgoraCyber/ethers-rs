@@ -29,6 +29,8 @@ criterion = {version = "0.4", features = ["async_futures", "html_reports"]}
 jsonrpc-rs = "^0.1"
 
 [features]
+default = ["rust_crypto"]
+
 rust_crypto = [
     "digest","hmac","pbkdf2","k256"
 ]

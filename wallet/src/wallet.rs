@@ -16,23 +16,23 @@ mod openssl;
 /// Private key provider trait
 pub trait KeyProvider {
     /// Load private key to memory
-    fn load(&mut self) -> Result<Vec<u8>>;
+    fn load(&self) -> Result<Vec<u8>>;
 }
 
 impl<'a> KeyProvider for &'a str {
-    fn load(&mut self) -> Result<Vec<u8>> {
+    fn load(&self) -> Result<Vec<u8>> {
         hex::hex_to_bytes(self).map_err(|err| WalletError::LoadKey(format!("{}", err)))
     }
 }
 
 impl<'a> KeyProvider for &'a [u8] {
-    fn load(&mut self) -> Result<Vec<u8>> {
+    fn load(&self) -> Result<Vec<u8>> {
         Ok(self.to_vec())
     }
 }
 
 impl KeyProvider for Vec<u8> {
-    fn load(&mut self) -> Result<Vec<u8>> {
+    fn load(&self) -> Result<Vec<u8>> {
         Ok(self.clone())
     }
 }

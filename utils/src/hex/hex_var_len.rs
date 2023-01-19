@@ -2,7 +2,7 @@
 macro_rules! hex_def {
     ($name:ident) => {
         /// 32 bytes $name
-        #[derive(Debug, Clone, PartialEq)]
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $name(pub Vec<u8>);
 
         impl Default for $name {
@@ -17,19 +17,25 @@ macro_rules! hex_def {
             }
         }
 
+        impl From<Vec<u8>> for $name {
+            fn from(value: Vec<u8>) -> Self {
+                Self(value)
+            }
+        }
+
         impl TryFrom<&str> for $name {
-            type Error = crate::error::UtilsError;
+            type Error = $crate::error::UtilsError;
 
             fn try_from(value: &str) -> Result<Self, Self::Error> {
-                let bytes = crate::hex::hex_to_bytes(value)
-                    .map_err(|err| crate::error::UtilsError::Hex(err))?;
+                let bytes = $crate::hex::hex_to_bytes(value)
+                    .map_err(|err| $crate::error::UtilsError::Hex(err))?;
 
                 Ok(Self(bytes))
             }
         }
 
         impl TryFrom<String> for $name {
-            type Error = crate::error::UtilsError;
+            type Error = $crate::error::UtilsError;
             fn try_from(value: String) -> Result<Self, Self::Error> {
                 Self::try_from(value.as_ref())
             }
@@ -38,7 +44,7 @@ macro_rules! hex_def {
         impl $name {
             /// Convert `$name` instance to hex string.
             pub fn to_string(&self) -> String {
-                crate::hex::bytes_to_hex(self.0.as_slice())
+                $crate::hex::bytes_to_hex(self.0.as_slice())
             }
         }
 

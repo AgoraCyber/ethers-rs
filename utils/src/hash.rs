@@ -21,6 +21,8 @@ pub mod pbkdf2 {
         HashMarker,
     };
 
+    pub use ::pbkdf2::*;
+
     /// A variant of the [`pbkdf2`][crate::pbkdf2] function which uses HMAC for PRF.
     /// It's generic over (eager) hash functions.
     ///

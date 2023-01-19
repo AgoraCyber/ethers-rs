@@ -90,6 +90,20 @@ pub trait AddressEx {
             )),
         }
     }
+
+    #[cfg(feature = "rust_crypto")]
+    fn from_private_key(key: &[u8]) -> Result<Address, UtilsError> {
+        let pk = k256::ecdsa::SigningKey::from_bytes(key)
+            .map_err(|err| UtilsError::Address(format!("{}", err)))?;
+
+        Ok(Self::from_pub_key(
+            pk.verifying_key()
+                .to_encoded_point(false)
+                .as_bytes()
+                .try_into()
+                .expect(""),
+        ))
+    }
 }
 
 impl AddressEx for Address {}
