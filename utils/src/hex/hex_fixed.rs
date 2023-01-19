@@ -18,26 +18,25 @@ macro_rules! hex_fixed_def {
         }
 
         impl TryFrom<&str> for $name {
-            type Error = crate::error::UtilsError;
+            type Error = $crate::anyhow::Error;
 
             fn try_from(value: &str) -> Result<Self, Self::Error> {
-                let bytes = crate::hex::hex_to_bytes(value)
-                    .map_err(|err| crate::error::UtilsError::Hex(err))?;
+                let bytes = $crate::hex::hex_to_bytes(value)?;
 
                 if bytes.len() != $len {
-                    return Err(crate::error::UtilsError::Hex(
-                        hex::FromHexError::InvalidStringLength,
-                    ));
+                    return Err(hex::FromHexError::InvalidStringLength.into());
                 }
 
-                Ok(Self(bytes.try_into().map_err(|_| {
-                    crate::error::UtilsError::Hex(hex::FromHexError::InvalidStringLength)
-                })?))
+                Ok(Self(
+                    bytes
+                        .try_into()
+                        .map_err(|_| hex::FromHexError::InvalidStringLength)?,
+                ))
             }
         }
 
         impl TryFrom<String> for $name {
-            type Error = crate::error::UtilsError;
+            type Error = $crate::anyhow::Error;
             fn try_from(value: String) -> Result<Self, Self::Error> {
                 Self::try_from(value.as_str())
             }

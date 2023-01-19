@@ -5,28 +5,43 @@ pub mod hex_fixed;
 #[macro_use]
 pub mod hex_var_len;
 
+pub use ::hex::*;
+
 /// Parse hex string to integer
 ///
 /// If `source` have the 0x prefix, skip over them.
-pub fn hex_to_integer<T: Num>(source: &str) -> Result<T, T::FromStrRadixErr> {
-    T::from_str_radix(source.trim_start_matches("0x"), 16)
+pub fn hex_to_integer<S, T: Num>(source: S) -> anyhow::Result<T>
+where
+    S: AsRef<str>,
+    T::FromStrRadixErr: std::error::Error + Send + Sync + 'static,
+{
+    Ok(T::from_str_radix(
+        source.as_ref().trim_start_matches("0x"),
+        16,
+    )?)
 }
 
 /// Decode hex string to [`Vec<u8>`]
 ///
 /// If `source` have the 0x prefix, skip over them.
-pub fn hex_to_bytes(source: &str) -> Result<Vec<u8>, hex::FromHexError> {
-    let mut source = source.trim_start_matches("0x").to_string();
+pub fn hex_to_bytes<S>(source: S) -> anyhow::Result<Vec<u8>>
+where
+    S: AsRef<str>,
+{
+    let mut source = source.as_ref().trim_start_matches("0x").to_string();
 
     if source.len() % 2 != 0 {
         source = format!("0{}", source);
     }
 
-    hex::decode(source)
+    Ok(hex::decode(source)?)
 }
 
 /// Convert bytes to hex string with prefix `0x`
-pub fn bytes_to_hex(source: &[u8]) -> String {
+pub fn bytes_to_hex<S>(source: S) -> String
+where
+    S: AsRef<[u8]>,
+{
     let hex_str = hex::encode(source);
 
     format!(

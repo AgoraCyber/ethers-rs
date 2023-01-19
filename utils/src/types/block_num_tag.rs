@@ -42,7 +42,7 @@ pub enum BlockTag {
 }
 
 impl<'a> TryFrom<&'a str> for BlockNumberOrTag {
-    type Error = UtilsError;
+    type Error = anyhow::Error;
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         if value.starts_with("0x") {
             Ok(BlockNumberOrTag::Number(value.try_into()?))

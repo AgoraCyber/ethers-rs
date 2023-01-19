@@ -24,18 +24,17 @@ macro_rules! hex_def {
         }
 
         impl TryFrom<&str> for $name {
-            type Error = $crate::error::UtilsError;
+            type Error = $crate::anyhow::Error;
 
             fn try_from(value: &str) -> Result<Self, Self::Error> {
-                let bytes = $crate::hex::hex_to_bytes(value)
-                    .map_err(|err| $crate::error::UtilsError::Hex(err))?;
+                let bytes = $crate::hex::hex_to_bytes(value)?;
 
                 Ok(Self(bytes))
             }
         }
 
         impl TryFrom<String> for $name {
-            type Error = $crate::error::UtilsError;
+            type Error = $crate::anyhow::Error;
             fn try_from(value: String) -> Result<Self, Self::Error> {
                 Self::try_from(value.as_ref())
             }

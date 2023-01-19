@@ -66,7 +66,7 @@ pub trait AddressEx {
     }
 
     #[cfg(feature = "rust_crypto")]
-    fn from_pub_key_compressed(key: [u8; 33]) -> Result<Address, UtilsError> {
+    fn from_pub_key_compressed(key: [u8; 33]) -> anyhow::Result<Address> {
         let key = k256::EncodedPoint::from_bytes(&key)
             .map_err(|err| UtilsError::Address(format!("{}", err)))?;
 
@@ -81,18 +81,18 @@ pub trait AddressEx {
         ))
     }
 
-    fn from_pub_key_vec(key: Vec<u8>) -> Result<Address, UtilsError> {
+    fn from_pub_key_vec(key: Vec<u8>) -> anyhow::Result<Address> {
         match key.len() {
             33 => Ok(Self::from_pub_key(key.try_into().expect(""))),
             65 => Ok(Self::from_pub_key(key.try_into().expect(""))),
-            _ => Err(UtilsError::Address(
-                "Address public key len either 33 or 65".to_owned(),
-            )),
+            _ => {
+                Err(UtilsError::Address("Address public key len either 33 or 65".to_owned()).into())
+            }
         }
     }
 
     #[cfg(feature = "rust_crypto")]
-    fn from_private_key(key: &[u8]) -> Result<Address, UtilsError> {
+    fn from_private_key(key: &[u8]) -> anyhow::Result<Address> {
         let pk = k256::ecdsa::SigningKey::from_bytes(key)
             .map_err(|err| UtilsError::Address(format!("{}", err)))?;
 
@@ -111,7 +111,7 @@ impl AddressEx for Address {}
 pub trait Eip55: Sized {
     fn to_checksum_string(&self) -> String;
 
-    fn from_checksum_string(source: &str) -> Result<Self, error::UtilsError>;
+    fn from_checksum_string(source: &str) -> anyhow::Result<Self>;
 }
 
 impl Eip55 for Address {
@@ -133,17 +133,14 @@ impl Eip55 for Address {
         data
     }
 
-    fn from_checksum_string(source: &str) -> Result<Self, error::UtilsError> {
+    fn from_checksum_string(source: &str) -> anyhow::Result<Self> {
         let address: Address =
             Self::try_from(source).map_err(|err| error::UtilsError::Address(format!("{}", err)))?;
 
         let expected = address.to_checksum_string();
 
         if expected != source {
-            return Err(error::UtilsError::Address(format!(
-                "Expect address {}",
-                expected
-            )));
+            return Err(error::UtilsError::Address(format!("Expect address {}", expected)).into());
         }
 
         Ok(address)
