@@ -16,4 +16,7 @@ pub enum UtilsError {
 
     #[error("Invalid transaction type {0}")]
     InvalidTypedTransaction(String),
+
+    #[error("Rlp encode error, {0}")]
+    RlpEncode(String),
 }

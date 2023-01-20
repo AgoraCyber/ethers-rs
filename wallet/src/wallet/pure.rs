@@ -47,7 +47,7 @@ impl LocalWalletRustCrypto {
         let recover_id = signature.0[0];
 
         let recover_id =
-            RecoveryId::from_byte(recover_id - 27).ok_or(WalletError::RecoverId(recover_id))?;
+            RecoveryId::from_byte(recover_id).ok_or(WalletError::RecoverId(recover_id))?;
 
         let key = VerifyingKey::recover_from_prehash(hashed.as_ref(), &sig, recover_id)
             .map_err(|err| WalletError::ECDSA(format!("Recover public key error, {}", err)))?;
@@ -76,7 +76,7 @@ impl LocalWalletRustCrypto {
 
         let mut result = vec![];
 
-        result.push(recid.expect("Recover id").to_byte() + 27);
+        result.push(recid.expect("Recover id").to_byte());
         result.append(&mut r.to_vec());
         result.append(&mut s.to_vec());
 

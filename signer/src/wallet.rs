@@ -182,5 +182,32 @@ mod tests {
             "0xf864018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c801801ba0c348ad24113ab8abe314937604694c135f58d5d93c9ec6c5a9fb28671ef68423a070e70600040a09f62a766d9744798ac8b459a85e6e3bfd3fd636118cb62126fe",
             tx.rlp_signed(&signature).to_string()
         );
+
+        let tx: Transaction = json!({
+            "type": "0x01",
+            "nonce": "0x1",
+            "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "value":"0x1",
+            "input":"0x",
+            "gas":"0x60000",
+            "gasPrice": "0x60000111"
+
+        })
+        .try_into()
+        .expect("Create tx");
+
+        let signature = signer
+            .sign_eth_transaction(tx.clone())
+            .await
+            .expect("Sign tx");
+
+        log::debug!("v {}", signature.v());
+        log::debug!("r {}", signature.r());
+        log::debug!("s {}", signature.s());
+
+        assert_eq!(
+            "0x01f86680018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c80180c001a083e9c85dd4f083d6f269f248da585803638c15ceeaeb53b49f461f41aec5a8d5a0622ee2778000be5acc2f101c46eba1bd4203911daee182144ef59469fd913b34",
+            tx.rlp_signed(&signature).to_string()
+        );
     }
 }

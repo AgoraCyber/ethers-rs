@@ -251,42 +251,64 @@ impl TryFrom<serde_json::Value> for Transaction {
 }
 
 impl Transaction {
-    const NUM_TX_FIELDS: usize = 9;
     /// Hashes the transaction's data with the provided chain id
     pub fn sighash(&self) -> TransactionHash {
-        match self.chain_id {
-            Some(_) => keccak256(self.rlp()).into(),
-            None => keccak256(self.rlp_unsigned()).into(),
-        }
+        let mut rlp = RlpStream::new();
+        rlp.begin_unbounded_list();
+
+        self.rlp(&mut rlp);
+
+        rlp.finalize_unbounded_list();
+
+        keccak256(rlp.out().freeze()).into()
     }
 
     /// Gets the transaction's RLP encoding, prepared with the chain_id and extra fields for
     /// signing. Assumes the chainid exists.
-    pub fn rlp(&self) -> Vec<u8> {
-        let mut rlp = RlpStream::new();
+    pub fn rlp(&self, rlp: &mut RlpStream) -> TypedTransaction {
+        let r#type = self.r#type.clone().unwrap_or(TypedTransaction::Legacy);
 
-        if let Some(chain_id) = &self.chain_id {
-            rlp.begin_list(Self::NUM_TX_FIELDS);
-            self.rlp_base(&mut rlp);
-
-            rlp.append(chain_id);
-            rlp.append(&0u8);
-            rlp.append(&0u8);
-        } else {
-            rlp.begin_list(Self::NUM_TX_FIELDS - 3);
-            self.rlp_base(&mut rlp);
+        match r#type {
+            TypedTransaction::Legacy => self.rlp_legacy(rlp),
+            TypedTransaction::Eip2930 => self.rlp_eip2930(rlp),
+            TypedTransaction::Eip1559 => self.rlp_eip1559(rlp),
         }
-        rlp.out().freeze().into()
+
+        r#type
     }
 
-    /// Gets the unsigned transaction's RLP encoding
-    pub fn rlp_unsigned(&self) -> Vec<u8> {
-        let mut rlp = RlpStream::new();
-        // rlp.begin_list(Self::NUM_TX_FIELDS - 3);
-        rlp.begin_unbounded_list();
-        self.rlp_base(&mut rlp);
-        rlp.finalize_unbounded_list();
-        rlp.out().freeze().into()
+    fn rlp_eip2930(&self, rlp: &mut RlpStream) {
+        let chain_id = self.chain_id.clone().unwrap_or(Number::default());
+
+        rlp.append(&chain_id);
+
+        self.rlp_legacy(rlp);
+
+        self.rlp_access_list(rlp);
+    }
+
+    fn rlp_access_list(&self, rlp: &mut RlpStream) {
+        if let Some(access_list) = &self.access_list {
+            rlp.append_list(&access_list);
+        } else {
+            // rlp.begin_list(0);
+            rlp.begin_list(0);
+            // rlp.append_empty_data();
+        }
+    }
+
+    fn rlp_eip1559(&self, rlp: &mut RlpStream) {
+        rlp_opt(rlp, &self.chain_id);
+        rlp_opt(rlp, &self.nonce);
+        rlp_opt(rlp, &self.max_priority_fee_per_gas);
+        rlp_opt(rlp, &self.max_fee_per_gas);
+        rlp_opt(rlp, &self.gas);
+
+        rlp.append(&self.to);
+        rlp.append(&self.value);
+        rlp.append(&self.input);
+
+        self.rlp_access_list(rlp)
     }
 
     /// Produces the RLP encoding of the transaction with the provided signature
@@ -295,9 +317,15 @@ impl Transaction {
 
         rlp.begin_unbounded_list();
 
-        self.rlp_base(&mut rlp);
-        // append the signature
-        rlp.append(&signature.v());
+        let r#type = self.rlp(&mut rlp);
+
+        if let TypedTransaction::Legacy = r#type {
+            let v = signature.v() + 27;
+            rlp.append(&v);
+        } else {
+            log::debug!(">>>>>>>>>>>>>>>>>>>>>>");
+            rlp.append(&signature.v());
+        }
 
         rlp.append(&signature.r());
 
@@ -305,10 +333,22 @@ impl Transaction {
 
         rlp.finalize_unbounded_list();
 
-        rlp.out().freeze().to_vec().into()
+        let mut result = rlp.out().freeze().to_vec();
+
+        match r#type {
+            TypedTransaction::Eip1559 => {
+                result.insert(0, 0x02);
+            }
+            TypedTransaction::Eip2930 => {
+                result.insert(0, 0x01);
+            }
+            _ => {}
+        }
+
+        result.into()
     }
 
-    pub(crate) fn rlp_base(&self, rlp: &mut RlpStream) {
+    pub(crate) fn rlp_legacy(&self, rlp: &mut RlpStream) {
         rlp_opt(rlp, &self.nonce);
         rlp_opt(rlp, &self.gas_price);
         rlp_opt(rlp, &self.gas);

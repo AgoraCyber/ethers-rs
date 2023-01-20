@@ -35,6 +35,7 @@ pub type Address = ethabi::Address;
 hex_fixed_def!(UncleHash, 32);
 hex_fixed_def!(BlockHash, 32);
 hex_fixed_def!(Sha3Hash, 32);
+hex_fixed_def!(StorageKey, 32);
 // hex_fixed_def!(Address, 20);
 hex_fixed_def!(MerkleHash, 32);
 hex_fixed_def!(TransactionHash, 32);
@@ -161,8 +162,8 @@ impl Eip55 for Address {
 
 impl Signature {
     /// Extract signature v
-    pub fn v(&self) -> Number {
-        self.0[0..1].into()
+    pub fn v(&self) -> u8 {
+        self.0[0]
     }
 
     /// Extract signature r

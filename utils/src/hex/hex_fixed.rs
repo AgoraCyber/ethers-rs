@@ -2,7 +2,7 @@
 macro_rules! hex_fixed_def {
     ($name:ident,$len:literal) => {
         /// 32 bytes $name
-        #[derive(Debug, Clone, PartialEq, Eq)]
+        #[derive(Debug, Clone, PartialEq, Eq, Hash)]
         pub struct $name(pub [u8; $len]);
 
         impl Default for $name {
@@ -94,6 +94,16 @@ macro_rules! hex_fixed_def {
         impl $crate::rlp::Encodable for $name {
             fn rlp_append(&self, s: &mut $crate::rlp::RlpStream) {
                 s.append(&self.0.as_slice());
+            }
+        }
+
+        impl $crate::rlp::Decodable for $name {
+            fn decode(rlp: &$crate::rlp::Rlp) -> Result<Self, $crate::rlp::DecoderError> {
+                rlp.decoder().decode_value(|bytes| {
+                    Ok(bytes
+                        .try_into()
+                        .map_err(|_| $crate::rlp::DecoderError::RlpInvalidLength)?)
+                })
             }
         }
 

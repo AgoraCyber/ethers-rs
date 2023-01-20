@@ -46,9 +46,25 @@ macro_rules! hex_def {
             }
         }
 
+        impl<'a> AsRef<[u8]> for $name
+        where
+            Self: 'a,
+        {
+            fn as_ref(&self) -> &[u8] {
+                self.0.as_slice()
+            }
+        }
+
         impl $crate::rlp::Encodable for $name {
             fn rlp_append(&self, s: &mut $crate::rlp::RlpStream) {
                 s.append(&self.0.as_slice());
+            }
+        }
+
+        impl $crate::rlp::Decodable for $name {
+            fn decode(rlp: &$crate::rlp::Rlp) -> Result<Self, $crate::rlp::DecoderError> {
+                rlp.decoder()
+                    .decode_value(|bytes| Ok(bytes.to_vec().into()))
             }
         }
 

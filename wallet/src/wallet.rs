@@ -69,7 +69,7 @@ mod tests {
     fn test_sign_and_recover() {
         let _ = pretty_env_logger::try_init();
 
-        let expected = "0x1cf16ea9a3478698f695fd1401bfe27e9e4a7e8e3da94aa72b021125e31fa899cc573c48ea3fe1d4ab61a9db10c19032026e3ed2dbccba5a178235ac27f9450431";
+        let expected = "0x01f16ea9a3478698f695fd1401bfe27e9e4a7e8e3da94aa72b021125e31fa899cc573c48ea3fe1d4ab61a9db10c19032026e3ed2dbccba5a178235ac27f9450431";
 
         let data = "hello";
 
