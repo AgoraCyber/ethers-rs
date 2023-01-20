@@ -288,13 +288,13 @@ impl Transaction {
     }
 
     fn rlp_access_list(&self, rlp: &mut RlpStream) {
+        rlp.begin_unbounded_list();
+
         if let Some(access_list) = &self.access_list {
             rlp.append_list(&access_list);
-        } else {
-            // rlp.begin_list(0);
-            rlp.begin_list(0);
-            // rlp.append_empty_data();
         }
+
+        rlp.finalize_unbounded_list();
     }
 
     fn rlp_eip1559(&self, rlp: &mut RlpStream) {
