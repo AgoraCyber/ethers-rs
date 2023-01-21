@@ -19,8 +19,8 @@ impl Encodable for AccessList {
 
         rlp_opt(s, &self.address);
 
-        if let Some(keys) = &self.storage_keys {
-            s.append_list(&keys);
+        if let Some(_) = &self.storage_keys {
+            // s.append_list(&keys);
         } else {
             s.begin_list(0);
         }

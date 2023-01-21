@@ -57,7 +57,13 @@ macro_rules! hex_def {
 
         impl $crate::rlp::Encodable for $name {
             fn rlp_append(&self, s: &mut $crate::rlp::RlpStream) {
-                s.append(&self.0.as_slice());
+                let buff = &self.0;
+
+                if buff.len() == 0 {
+                    s.append_raw(&[0x80], 1);
+                } else {
+                    s.append(&buff.as_slice());
+                }
             }
         }
 

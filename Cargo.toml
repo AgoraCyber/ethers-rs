@@ -4,7 +4,7 @@ members = [
     "ethers","macros",
     "parity/ethabi",
     "signer",
-    "wallet"
+    "wallet",
     # "parity/ethereum-types",
     # "parity/fixed-hash",
     # "parity/primitive-types",

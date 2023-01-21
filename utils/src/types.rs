@@ -53,10 +53,38 @@ hex_fixed_def!(Type, 1);
 hex_fixed_def!(Status, 1);
 hex_fixed_def!(Topic, 32);
 hex_fixed_def!(Signature, 65);
+hex_fixed_def!(ChainId, 8);
+
+number_rlp_support!(Nonce);
+number_rlp_support!(ChainId);
 
 pub type Uint = ethabi::Uint;
 pub type Int = ethabi::Int;
 pub type Hash32 = ethabi::Hash;
+
+// impl From<&ChainId> for u64 {
+//     fn from(id: &ChainId) -> Self {
+//         u64::from_be_bytes(id.0)
+//     }
+// }
+
+impl Into<u64> for &ChainId {
+    fn into(self) -> u64 {
+        u64::from_be_bytes(self.0)
+    }
+}
+
+impl Into<u64> for ChainId {
+    fn into(self) -> u64 {
+        u64::from_be_bytes(self.0)
+    }
+}
+
+impl From<u64> for ChainId {
+    fn from(value: u64) -> Self {
+        Self(value.to_be_bytes())
+    }
+}
 
 /// Extend `Address` structure, add some usefull helper fns.
 pub trait AddressEx {

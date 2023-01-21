@@ -21,17 +21,21 @@ macro_rules! hex_fixed_def {
             type Error = $crate::anyhow::Error;
 
             fn try_from(value: &str) -> Result<Self, Self::Error> {
-                let bytes = $crate::hex::hex_to_bytes(value)?;
+                let mut bytes = $crate::hex::hex_to_bytes(value)?;
 
-                if bytes.len() != $len {
-                    return Err(hex::FromHexError::InvalidStringLength.into());
+                if bytes.len() > $len {
+                    return Err($crate::hex::FromHexError::InvalidStringLength.into());
+                } else if bytes.len() < $len {
+                    let mut zero = vec![0; $len - bytes.len()];
+
+                    zero.append(&mut bytes);
+
+                    bytes = zero;
                 }
 
-                Ok(Self(
-                    bytes
-                        .try_into()
-                        .map_err(|_| hex::FromHexError::InvalidStringLength)?,
-                ))
+                Ok(Self(bytes.try_into().map_err(|_| {
+                    $crate::hex::FromHexError::InvalidStringLength
+                })?))
             }
         }
 
@@ -43,20 +47,28 @@ macro_rules! hex_fixed_def {
         }
 
         impl TryFrom<Vec<u8>> for $name {
-            type Error = crate::error::UtilsError;
-            fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+            type Error = $crate::anyhow::Error;
+            fn try_from(mut value: Vec<u8>) -> Result<Self, Self::Error> {
+                if value.len() > $len {
+                    return Err($crate::hex::FromHexError::InvalidStringLength.into());
+                } else if value.len() < $len {
+                    let mut zero = vec![0; $len - value.len()];
+
+                    zero.append(&mut value);
+
+                    value = zero;
+                }
+
                 Ok(Self(value.try_into().map_err(|_| {
-                    crate::error::UtilsError::Hex(hex::FromHexError::InvalidStringLength)
+                    $crate::error::UtilsError::Hex($crate::hex::FromHexError::InvalidStringLength)
                 })?))
             }
         }
 
         impl<'a> TryFrom<&'a [u8]> for $name {
-            type Error = crate::error::UtilsError;
+            type Error = $crate::anyhow::Error;
             fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
-                Ok(Self(value.try_into().map_err(|_| {
-                    crate::error::UtilsError::Hex(hex::FromHexError::InvalidStringLength)
-                })?))
+                Ok(value.to_vec().try_into()?)
             }
         }
 
@@ -78,7 +90,7 @@ macro_rules! hex_fixed_def {
         impl $name {
             /// Convert `$name` instance to hex string.
             pub fn to_string(&self) -> String {
-                crate::hex::bytes_to_hex(self.0.as_slice())
+                $crate::hex::bytes_to_hex(self.0.as_slice())
             }
         }
 
@@ -88,22 +100,6 @@ macro_rules! hex_fixed_def {
                 S: serde::Serializer,
             {
                 serializer.serialize_str(&self.to_string())
-            }
-        }
-
-        impl $crate::rlp::Encodable for $name {
-            fn rlp_append(&self, s: &mut $crate::rlp::RlpStream) {
-                s.append(&self.0.as_slice());
-            }
-        }
-
-        impl $crate::rlp::Decodable for $name {
-            fn decode(rlp: &$crate::rlp::Rlp) -> Result<Self, $crate::rlp::DecoderError> {
-                rlp.decoder().decode_value(|bytes| {
-                    Ok(bytes
-                        .try_into()
-                        .map_err(|_| $crate::rlp::DecoderError::RlpInvalidLength)?)
-                })
             }
         }
 
@@ -143,12 +139,7 @@ macro_rules! hex_fixed_def {
                     where
                         E: de::Error,
                     {
-                        if v.len() != $len {
-                            Err(hex::FromHexError::InvalidStringLength)
-                                .map_err(serde::de::Error::custom)
-                        } else {
-                            Ok($name(v.try_into().map_err(serde::de::Error::custom)?))
-                        }
+                        Ok(v.try_into().map_err(serde::de::Error::custom)?)
                     }
 
                     fn visit_none<E>(self) -> Result<Self::Value, E>
@@ -162,32 +153,68 @@ macro_rules! hex_fixed_def {
                     where
                         E: de::Error,
                     {
-                        if v.len() != $len {
-                            Err(hex::FromHexError::InvalidStringLength)
-                                .map_err(serde::de::Error::custom)
-                        } else {
-                            Ok($name(
-                                v.as_slice().try_into().map_err(serde::de::Error::custom)?,
-                            ))
-                        }
+                        Ok(v.try_into().map_err(serde::de::Error::custom)?)
                     }
 
                     fn visit_borrowed_bytes<E>(self, v: &'de [u8]) -> Result<Self::Value, E>
                     where
                         E: de::Error,
                     {
-                        if v.len() != $len {
-                            Err(hex::FromHexError::InvalidStringLength)
-                                .map_err(serde::de::Error::custom)
-                        } else {
-                            Ok($name(v.try_into().map_err(serde::de::Error::custom)?))
-                        }
+                        Ok(v.try_into().map_err(serde::de::Error::custom)?)
                     }
                 }
 
                 let hex = deserializer.deserialize_any(Visitor)?;
 
                 hex.try_into().map_err(serde::de::Error::custom)
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! number_rlp_support {
+    ($name:ident) => {
+        impl $crate::rlp::Encodable for $name {
+            fn rlp_append(&self, s: &mut $crate::rlp::RlpStream) {
+                let bytes = &self.0.as_slice();
+
+                let b = num::BigUint::from_bytes_be(bytes);
+
+                let buff = b.to_bytes_be();
+
+                if buff.len() == 0 || (buff.len() == 1 && buff[0] == 0) {
+                    s.append_raw(&[0x80], 1);
+                } else {
+                    s.append(&buff);
+                }
+
+                // let mut offset = 0;
+
+                // for (index, c) in bytes.iter().enumerate() {
+                //     offset = index;
+                //     if *c != 0u8 {
+                //         break;
+                //     }
+                // }
+
+                // $crate::log::debug!("offset {}, len {}", offset, bytes.len());
+
+                // if offset + 1 == bytes.len() {
+                //     s.append(&"");
+                // } else {
+                //     s.append(&&bytes[offset..]);
+                // }
+            }
+        }
+
+        impl $crate::rlp::Decodable for $name {
+            fn decode(rlp: &$crate::rlp::Rlp) -> Result<Self, $crate::rlp::DecoderError> {
+                rlp.decoder().decode_value(|bytes| {
+                    Ok(bytes
+                        .try_into()
+                        .map_err(|_| $crate::rlp::DecoderError::RlpInvalidLength)?)
+                })
             }
         }
     };

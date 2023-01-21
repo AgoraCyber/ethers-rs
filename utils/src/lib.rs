@@ -13,3 +13,7 @@ pub mod eip712;
 pub use anyhow;
 
 pub mod rlp;
+
+pub use num;
+
+pub use log;
