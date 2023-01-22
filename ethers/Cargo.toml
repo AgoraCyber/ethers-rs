@@ -6,12 +6,16 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+
+anyhow = "1.0.68"
+serde_json = "^1.0"
+thiserror = "1.0.38"
+log = "0.4.16"
+
 ethers-macros-rs = {path = "../macros"}
 ethers-providers-rs = {path = "../providers"}
 ethers-types-rs = {path = "../types"}
 
-thiserror = "1.0.38"
-rustc-hex = { version = "2.0.1" }
 
 [dev-dependencies]
 dotenv = "0.15.0"

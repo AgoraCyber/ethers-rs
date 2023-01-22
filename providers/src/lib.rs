@@ -153,7 +153,7 @@ impl Provider {
         block_number_or_tag: Option<BT>,
     ) -> RPCResult<Bytecode>
     where
-        TX: TryInto<Transaction>,
+        TX: TryInto<TypedTransactionRequest>,
         TX::Error: Debug + Display,
         BT: TryInto<BlockNumberOrTag>,
         BT::Error: Debug + Display,

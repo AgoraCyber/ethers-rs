@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{signature::SignatureVRS, Bytecode};
 
-use super::LegacyTransactionRequest;
+use super::{rlp_opt, LegacyTransactionRequest};
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
@@ -46,7 +46,7 @@ impl Eip2930TransactionRequest {
     }
 
     fn rlp_base(&self, s: &mut rlp::RlpStream) {
-        s.append(&self.tx.chain_id);
+        rlp_opt(s, &self.tx.chain_id);
 
         self.tx.rlp_base(s);
 

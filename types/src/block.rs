@@ -161,7 +161,8 @@ pub struct Transaction {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hash: Option<H256>,
     /// Transfer eth value
-    pub value: U256,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub value: Option<U256>,
     /// Input data to call contract.
     pub input: Bytecode,
     /// Maximum fee per gas the sender is willing to pay to miners in wei
@@ -174,7 +175,8 @@ pub struct Transaction {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_fee_per_gas: Option<U256>,
     /// EIP-2930 access list
-    pub access_list: AccessList,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub access_list: Option<AccessList>,
     /// Chain ID tha this transaction is valid on
     #[serde(rename = "chainId")]
     #[serde(skip_serializing_if = "Option::is_none")]

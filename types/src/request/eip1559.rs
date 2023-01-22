@@ -28,7 +28,7 @@ pub struct Eip1559TransactionRequest {
     /// The compiled code of a contract OR the first 4 bytes of the hash of the
     /// invoked method signature and encoded parameters. For details see Ethereum Contract ABI
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub input: Option<Bytecode>,
+    pub data: Option<Bytecode>,
 
     pub access_list: AccessList,
 }
@@ -70,7 +70,7 @@ impl Eip1559TransactionRequest {
 
         rlp_opt(s, &self.to);
         rlp_opt(s, &self.value);
-        rlp_opt(s, &self.input);
+        rlp_opt(s, &self.data);
 
         s.append(&self.access_list);
     }

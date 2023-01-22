@@ -208,6 +208,8 @@ impl Function {
 
                 let bytes = f.encode_input(&tokens).expect(INTERNAL_ERR);
 
+                let bytes = self.0.eth_call(bytes).await?;
+
                 let result = functions::#module_name::decode_output(&bytes)?;
 
                 Ok(result)

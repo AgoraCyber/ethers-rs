@@ -14,11 +14,14 @@ use crate::Signature;
 #[serde(rename_all = "camelCase")]
 pub struct LegacyTransactionRequest {
     /// Transaction nonce
-    pub nonce: U256,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nonce: Option<U256>,
     /// Gas price
-    pub gas_price: U256,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gas_price: Option<U256>,
     /// Supplied gas
-    pub gas: U256,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gas: Option<U256>,
     /// Recipient address (None for contract creation)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub to: Option<Address>,
@@ -27,9 +30,10 @@ pub struct LegacyTransactionRequest {
     /// The compiled code of a contract OR the first 4 bytes of the hash of the
     /// invoked method signature and encoded parameters. For details see Ethereum Contract ABI
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub input: Option<Bytecode>,
+    pub data: Option<Bytecode>,
     /// Chain id for EIP-155
-    pub chain_id: U64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chain_id: Option<U64>,
 }
 
 impl Encodable for LegacyTransactionRequest {
@@ -39,7 +43,8 @@ impl Encodable for LegacyTransactionRequest {
         self.rlp_base(s);
 
         // EIP-155 suggest encoding fields
-        s.append(&self.chain_id);
+        // rlp_opt(s, &self.chain_id);
+        s.append(&self.chain_id.unwrap());
         s.append(&0u8);
         s.append(&0u8);
         s.finalize_unbounded_list();
@@ -61,13 +66,13 @@ impl LegacyTransactionRequest {
     }
 
     pub(crate) fn rlp_base(&self, rlp: &mut RlpStream) {
-        rlp.append(&self.nonce);
-        rlp.append(&self.gas_price);
-        rlp.append(&self.gas);
+        rlp_opt(rlp, &self.nonce);
+        rlp_opt(rlp, &self.gas_price);
+        rlp_opt(rlp, &self.gas);
 
         rlp_opt(rlp, &self.to);
         rlp_opt(rlp, &self.value);
-        rlp_opt(rlp, &self.input);
+        rlp_opt(rlp, &self.data);
 
         // rlp.append(&self.to);
         // rlp.append(&self.value);
@@ -83,7 +88,7 @@ impl LegacyTransactionRequest {
         self.rlp_base(&mut rlp);
 
         // encode v,r,s
-        let chain_id: u64 = self.chain_id.as_u64();
+        let chain_id: u64 = self.chain_id.unwrap_or(Default::default()).as_u64();
 
         let v = signature.v() as u64 + 35 + chain_id * 2;
 
