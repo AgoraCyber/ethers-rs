@@ -241,7 +241,7 @@ impl CodeGen for Contract {
                 /// Contract's logs.
                 pub mod logs {
                     use super::INTERNAL_ERR;
-                    use ethabi;
+                    use ethers_rs::ethabi;
                     #(#logs)*
                 }
 

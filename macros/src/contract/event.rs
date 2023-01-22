@@ -122,7 +122,7 @@ impl<'a> From<&'a ethabi::Event> for Event {
                 let indexed = x.indexed;
 
                 quote! {
-                    ethabi::EventParam {
+                    ethers_rs::ethabi::EventParam {
                         name: #name.to_owned(),
                         kind: #kind,
                         indexed: #indexed
@@ -175,19 +175,19 @@ impl Event {
 
         quote! {
             pub mod #name {
-                use ethabi;
+                use ethers_rs::ethabi;
                 use super::INTERNAL_ERR;
 
-                pub fn event() -> ethabi::Event {
-                    ethabi::Event {
+                pub fn event() -> ethers_rs::ethabi::Event {
+                    ethers_rs::ethabi::Event {
                         name: #name_as_string.into(),
                         inputs: #recreate_inputs_quote,
                         anonymous: #anonymous,
                     }
                 }
 
-                pub fn filter<#(#filter_declarations),*>(#(#filter_definitions),*) -> ethabi::TopicFilter {
-                    let raw = ethabi::RawTopicFilter {
+                pub fn filter<#(#filter_declarations),*>(#(#filter_definitions),*) -> ethers_rs::ethabi::TopicFilter {
+                    let raw = ethers_rs::ethabi::RawTopicFilter {
                         #(#filter_init)*
                         ..Default::default()
                     };

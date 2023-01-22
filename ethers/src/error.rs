@@ -1,3 +1,4 @@
+use ethers_types_rs::ethabi;
 use std::fmt::Display;
 
 #[derive(Debug, thiserror::Error)]

@@ -80,10 +80,10 @@ impl CodeGen for Constructor {
 
         quote! {
             /// Encodes a call to contract's constructor.
-            pub fn constructor<#(#declarations),*>(#(#definitions),*) -> ethers_rs::Result<ethabi::Bytes>
+            pub fn constructor<#(#declarations),*>(#(#definitions),*) -> ethers_rs::Result<ethers_rs::ethabi::Bytes>
             where #(#where_clauses,)*
             {
-                let c = ethabi::Constructor {
+                let c = ethers_rs::ethabi::Constructor {
                     inputs: #recreate_inputs,
                 };
                 let tokens = vec![#(#tokenize),*];

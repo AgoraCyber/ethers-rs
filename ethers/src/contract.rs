@@ -1,5 +1,5 @@
-use ethabi::Address;
 use ethers_providers_rs::Provider;
+use ethers_types_rs::Address;
 
 /// Ether client signer impl placeholer
 ///

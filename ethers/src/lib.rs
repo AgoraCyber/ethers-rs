@@ -1,10 +1,11 @@
 //! rexport ethers macros.
 pub use ethers_macros_rs::*;
 
-pub use ethabi;
-pub use ethabi::{Address, Bytes, FixedBytes, Hash, Int, Uint};
-
 pub mod contract;
+
+pub use ethers_types_rs::ethabi;
+
+pub use ethers_types_rs::*;
 
 pub use contract::*;
 pub use ethers_providers_rs::Provider;

@@ -44,22 +44,22 @@ pub fn template_param_where_clause(input: &ParamType, index: usize) -> proc_macr
     let u_ident = syn::Ident::new(&format!("U{index}"), Span::call_site());
     match input {
         ParamType::Address => {
-            quote! { #t_ident: TryInto<ethabi::Address>, #t_ident::Error: std::fmt::Display + std::fmt::Debug }
+            quote! { #t_ident: TryInto<ethers_rs::ethabi::Address>, #t_ident::Error: std::fmt::Display + std::fmt::Debug }
         }
         ParamType::Bytes => {
-            quote! { #t_ident: TryInto<ethabi::Bytes>, #t_ident::Error: std::fmt::Display + std::fmt::Debug }
+            quote! { #t_ident: TryInto<ethers_rs::ethabi::Bytes>, #t_ident::Error: std::fmt::Display + std::fmt::Debug }
         }
         ParamType::FixedBytes(32) => {
-            quote! { #t_ident: TryInto<ethabi::Hash>, #t_ident::Error: std::fmt::Display + std::fmt::Debug }
+            quote! { #t_ident: TryInto<ethers_rs::ethabi::Hash>, #t_ident::Error: std::fmt::Display + std::fmt::Debug }
         }
         ParamType::FixedBytes(size) => {
             quote! { #t_ident: TryInto<[u8; #size]> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
         }
         ParamType::Int(_) => {
-            quote! { #t_ident: TryInto<ethabi::Int> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
+            quote! { #t_ident: TryInto<ethers_rs::ethabi::Int> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
         }
         ParamType::Uint(_) => {
-            quote! { #t_ident: TryInto<ethabi::Uint> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
+            quote! { #t_ident: TryInto<ethers_rs::ethabi::Uint> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
         }
         ParamType::Bool => {
             quote! { #t_ident: TryInto<bool> , #t_ident::Error: std::fmt::Display + std::fmt::Debug}
@@ -347,7 +347,7 @@ where
             let name = &x.name;
             let kind = to_syntax_string(&x.kind);
             quote! {
-                ethabi::Param {
+                ethers_rs::ethabi::Param {
                     name: #name.to_owned(),
                     kind: #kind,
                     internal_type: None
@@ -405,7 +405,7 @@ pub fn to_syntax_string(param_type: &ethabi::ParamType) -> proc_macro2::TokenStr
                 {
                     #(#to_token_streams)*
 
-                    ethabi::ParamType::Tuple(vec![#(#idents,)*])
+                    ethers_rs::ethabi::ParamType::Tuple(vec![#(#idents,)*])
                 }
             }
         }

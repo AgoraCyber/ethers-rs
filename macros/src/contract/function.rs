@@ -238,10 +238,14 @@ impl CodeGen for Function {
         #[allow(deprecated)]
         let constant = self.constant;
         let state_mutability = match self.state_mutability {
-            ethabi::StateMutability::Pure => quote! { ::ethabi::StateMutability::Pure },
-            ethabi::StateMutability::Payable => quote! { ::ethabi::StateMutability::Payable },
-            ethabi::StateMutability::NonPayable => quote! { ::ethabi::StateMutability::NonPayable },
-            ethabi::StateMutability::View => quote! { ::ethabi::StateMutability::View },
+            ethabi::StateMutability::Pure => quote! { ethers_rs::ethabi::StateMutability::Pure },
+            ethabi::StateMutability::Payable => {
+                quote! { ethers_rs::ethabi::StateMutability::Payable }
+            }
+            ethabi::StateMutability::NonPayable => {
+                quote! { ethers_rs::ethabi::StateMutability::NonPayable }
+            }
+            ethabi::StateMutability::View => quote! { ethers_rs::ethabi::StateMutability::View },
         };
         let outputs_result = &self.outputs.result;
         let outputs_implementation = &self.outputs.implementation;
@@ -255,12 +259,12 @@ impl CodeGen for Function {
 
         quote! {
             pub mod #module_name {
-                use ethabi;
+                use ethers_rs::ethabi;
                 use super::INTERNAL_ERR;
 
-                pub fn function() -> ethabi::Function {
+                pub fn function() -> ethers_rs::ethabi::Function {
                     #[allow(deprecated)]
-                    ethabi::Function {
+                    ethers_rs::ethabi::Function {
                         name: #name.into(),
                         inputs: #recreate_inputs,
                         outputs: #recreate_outputs,
@@ -281,7 +285,7 @@ impl CodeGen for Function {
                 }
 
                 /// Encodes function input.
-                pub fn encode_input<#(#declarations),*>(#(#definitions),*) -> ethers_rs::Result<ethabi::Bytes>
+                pub fn encode_input<#(#declarations),*>(#(#definitions),*) -> ethers_rs::Result<ethers_rs::ethabi::Bytes>
                 where #(#where_clauses,)*
                 {
                     let f = function();

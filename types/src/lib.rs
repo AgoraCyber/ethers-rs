@@ -16,6 +16,7 @@ pub use eip712::*;
 pub mod signature;
 pub use signature::*;
 
+pub use ethabi;
 pub use ethabi::ethereum_types::*;
 
 #[macro_use]

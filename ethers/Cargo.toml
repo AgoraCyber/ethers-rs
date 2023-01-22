@@ -8,7 +8,8 @@ edition = "2021"
 [dependencies]
 ethers-macros-rs = {path = "../macros"}
 ethers-providers-rs = {path = "../providers"}
-ethabi = {path = "../parity/ethabi"}
+ethers-types-rs = {path = "../types"}
+
 thiserror = "1.0.38"
 rustc-hex = { version = "2.0.1" }
 
