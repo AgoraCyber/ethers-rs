@@ -1,7 +1,7 @@
 //! ethers-rs wallet facade
 //!
 
-use ethers_utils_rs::hex;
+use ethers_types_rs::bytes::bytes_from_str;
 
 use crate::{Result, WalletError};
 
@@ -21,7 +21,7 @@ pub trait KeyProvider {
 
 impl<'a> KeyProvider for &'a str {
     fn load(&self) -> Result<Vec<u8>> {
-        hex::hex_to_bytes(self).map_err(|err| WalletError::LoadKey(format!("{}", err)))
+        bytes_from_str(self).map_err(|err| WalletError::LoadKey(format!("{}", err)))
     }
 }
 
@@ -40,9 +40,9 @@ impl KeyProvider for Vec<u8> {
 #[cfg(test)]
 mod tests {
 
+    use ethers_hash_rs::keccak256;
     use ethers_types_rs::signature::SignatureVRS;
     use ethers_types_rs::{Address, AddressEx, Eip55};
-    use ethers_utils_rs::hash::keccak256;
 
     use super::Wallet;
 

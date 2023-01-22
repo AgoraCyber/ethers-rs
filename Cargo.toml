@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "providers","utils",
+    "providers",
     "ethers","macros",
     "parity/ethabi",
     "signer",

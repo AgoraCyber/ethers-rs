@@ -1,5 +1,5 @@
 use ethabi::ethereum_types::{Signature, H256};
-use ethers_utils_rs::{hash::keccak256, hex_fixed_def};
+use ethers_hash_rs::keccak256;
 use rlp::Encodable;
 use serde::{Deserialize, Serialize};
 
@@ -88,8 +88,6 @@ impl Encodable for AccessList {
     }
 }
 
-hex_fixed_def!(StorageKey, 32);
-
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Access {
@@ -114,11 +112,5 @@ impl Encodable for Access {
         }
 
         s.finalize_unbounded_list();
-    }
-}
-
-impl Encodable for StorageKey {
-    fn rlp_append(&self, s: &mut rlp::RlpStream) {
-        s.append(&self.as_ref());
     }
 }

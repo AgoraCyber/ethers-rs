@@ -7,7 +7,6 @@ edition = "2021"
 
 [dependencies]
 ethers-macros-rs = {path = "../macros"}
-ethers-utils-rs = {path = "../utils"}
 ethers-providers-rs = {path = "../providers"}
 ethabi = {path = "../parity/ethabi"}
 thiserror = "1.0.38"

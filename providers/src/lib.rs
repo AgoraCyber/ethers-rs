@@ -2,8 +2,6 @@ use std::fmt::{Debug, Display};
 
 use jsonrpc_rs::RPCResult;
 
-use ethers_utils_rs::hex;
-
 use ethers_types_rs::*;
 
 use ethers_types_rs::Address;
@@ -34,23 +32,17 @@ impl Provider {
     }
 
     /// Returns the number of most recent block.
-    pub async fn eth_block_number(&mut self) -> RPCResult<u64> {
-        let block_number: String = self
-            .rpc_client
+    pub async fn eth_block_number(&mut self) -> RPCResult<U256> {
+        self.rpc_client
             .call("eth_blockNumber", Vec::<String>::new())
-            .await?;
-
-        Ok(hex::hex_to_integer(&block_number).map_err(jsonrpc_rs::map_error)?)
+            .await
     }
 
     /// Returns the chain ID of the current network
-    pub async fn eth_chain_id(&mut self) -> RPCResult<u64> {
-        let block_number: String = self
-            .rpc_client
+    pub async fn eth_chain_id(&mut self) -> RPCResult<U64> {
+        self.rpc_client
             .call("eth_chainId", Vec::<String>::new())
-            .await?;
-
-        Ok(hex::hex_to_integer(&block_number).map_err(jsonrpc_rs::map_error)?)
+            .await
     }
 
     /// Returns information about a block by hash.
@@ -90,42 +82,36 @@ impl Provider {
     }
 
     /// Returns the number of transactions in a block from a block matching the given block hash
-    pub async fn eth_get_block_transaction_count_by_hash<H>(&mut self, hash: H) -> RPCResult<u64>
+    pub async fn eth_get_block_transaction_count_by_hash<H>(&mut self, hash: H) -> RPCResult<U64>
     where
         H: TryInto<BlockHash>,
         H::Error: Debug + Display,
     {
         let hash = hash.try_into().map_err(jsonrpc_rs::map_error)?;
 
-        let count: String = self
-            .rpc_client
+        self.rpc_client
             .call("eth_getBlockTransactionCountByNumber", vec![hash])
-            .await?;
-
-        Ok(hex::hex_to_integer(&count).map_err(jsonrpc_rs::map_error)?)
+            .await
     }
 
     /// Returns the number of uncles in a block from a block matching the given block hash
-    pub async fn eth_get_uncle_count_by_block_hash<H>(&mut self, hash: H) -> RPCResult<u64>
+    pub async fn eth_get_uncle_count_by_block_hash<H>(&mut self, hash: H) -> RPCResult<U64>
     where
         H: TryInto<BlockHash>,
         H::Error: Debug + Display,
     {
         let hash = hash.try_into().map_err(jsonrpc_rs::map_error)?;
 
-        let count: String = self
-            .rpc_client
+        self.rpc_client
             .call("eth_getUncleCountByBlockHash", vec![hash])
-            .await?;
-
-        Ok(hex::hex_to_integer(&count).map_err(jsonrpc_rs::map_error)?)
+            .await
     }
 
     /// Returns the number of uncles in a block from a block matching the given block hash
     pub async fn eth_get_uncle_count_by_block_number<BT>(
         &mut self,
         block_number_or_tag: BT,
-    ) -> RPCResult<u64>
+    ) -> RPCResult<U64>
     where
         BT: TryInto<BlockNumberOrTag>,
         BT::Error: Debug + Display,
@@ -134,12 +120,9 @@ impl Provider {
             .try_into()
             .map_err(jsonrpc_rs::map_error)?;
 
-        let count: String = self
-            .rpc_client
+        self.rpc_client
             .call("eth_getUncleCountByBlockNumber", vec![block_number_or_tag])
-            .await?;
-
-        Ok(hex::hex_to_integer(&count).map_err(jsonrpc_rs::map_error)?)
+            .await
     }
 
     /// Returns an object with data about the sync status or false
@@ -530,18 +513,18 @@ mod tests {
                 .eth_get_block_transaction_count_by_hash(hash.clone())
                 .await?;
 
-            assert_eq!(block.transactions.len() as u64, tx_count);
+            assert_eq!(block.transactions.len(), tx_count.as_usize());
 
             let uncles = provider
                 .eth_get_uncle_count_by_block_hash(hash.clone())
                 .await?;
 
-            assert_eq!(block.uncles.len() as u64, uncles);
+            assert_eq!(block.uncles.len(), uncles.as_usize());
 
             if let Some(number) = block.number {
                 let uncles = provider.eth_get_uncle_count_by_block_number(number).await?;
 
-                assert_eq!(block.uncles.len() as u64, uncles);
+                assert_eq!(block.uncles.len(), uncles.as_usize());
             }
         }
 

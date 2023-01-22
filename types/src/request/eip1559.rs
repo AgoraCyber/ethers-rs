@@ -1,5 +1,5 @@
 use ethabi::ethereum_types::{Address, Signature, H256, U256};
-use ethers_utils_rs::hash::keccak256;
+use ethers_hash_rs::keccak256;
 use rlp::Encodable;
 use serde::{Deserialize, Serialize};
 

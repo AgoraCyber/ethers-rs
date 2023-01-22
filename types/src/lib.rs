@@ -18,7 +18,8 @@ pub use signature::*;
 
 pub use ethabi::ethereum_types::*;
 
-mod bytes;
+#[macro_use]
+pub mod bytes;
 
 pub use rlp;
 

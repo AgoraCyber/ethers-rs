@@ -4,8 +4,8 @@ use aes::{
     cipher::{self, InnerIvInit, KeyInit, StreamCipherCore},
     Aes128,
 };
-use ethers_types_rs::{Address, AddressEx};
-use ethers_utils_rs::{hash::pbkdf2::pbkdf2_hmac, hex_def};
+use ethers_hash_rs::pbkdf2::pbkdf2_hmac;
+use ethers_types_rs::{bytes_def, Address, AddressEx};
 use rand::{CryptoRng, Rng};
 use scrypt::{scrypt, Params as ScryptParams};
 use serde::{Deserialize, Serialize};
@@ -15,10 +15,10 @@ use uuid::Uuid;
 
 use crate::{wallet::KeyProvider, WalletError};
 
-hex_def!(IV);
-hex_def!(CipherText);
-hex_def!(MAC);
-hex_def!(Salt);
+bytes_def!(IV);
+bytes_def!(CipherText);
+bytes_def!(MAC);
+bytes_def!(Salt);
 
 const DEFAULT_CIPHER: &str = "aes-128-ctr";
 const DEFAULT_KEY_SIZE: usize = 32usize;
@@ -267,8 +267,7 @@ impl KeyStore {
 
 #[cfg(test)]
 mod tests {
-    use ethers_types_rs::{Address, AddressEx};
-    use ethers_utils_rs::hex::bytes_to_hex;
+    use ethers_types_rs::{bytes::bytes_to_string, Address, AddressEx};
 
     use super::{KeyStore, KeyStoreEncrypt};
 
@@ -295,7 +294,7 @@ mod tests {
             .expect("Descrypt keystore");
 
         assert_eq!(
-            bytes_to_hex(&pk),
+            bytes_to_string(&pk),
             "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
         );
     }
@@ -311,7 +310,7 @@ mod tests {
             .expect("Decrypt keystore with password");
 
         assert_eq!(
-            bytes_to_hex(&pk),
+            bytes_to_string(&pk),
             "0x7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d"
         );
     }
@@ -329,7 +328,7 @@ mod tests {
             .expect("Decrypt keystore with password");
 
         assert_eq!(
-            bytes_to_hex(&pk),
+            bytes_to_string(&pk),
             "0x80d3a6ed7b24dcd652949bc2f3827d2f883b3722e3120b15a93a2e0790f03829"
         );
     }

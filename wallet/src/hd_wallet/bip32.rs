@@ -1,6 +1,6 @@
 use std::io::Write;
 
-use ethers_utils_rs::hash::pbkdf2::pbkdf2_hmac_array;
+use ethers_hash_rs::pbkdf2::pbkdf2_hmac_array;
 use hmac::{Hmac, Mac};
 use k256::ecdsa::SigningKey;
 use sha2::Sha512;
@@ -137,8 +137,7 @@ impl DriveKey {
 
 #[cfg(test)]
 mod tests {
-    use ethers_types_rs::{Address, AddressEx, Eip55};
-    use ethers_utils_rs::hex::bytes_to_hex;
+    use ethers_types_rs::{bytes::bytes_to_string, Address, AddressEx, Eip55};
 
     use super::{mnemonic_to_send, DriveKey};
 
@@ -149,7 +148,7 @@ mod tests {
             "",
         );
 
-        assert_eq!("0x15cba277c500b4e0c777d563278130f4c24b52532b3c8c45e051d417bebc5c007243c07d2e341a2d7c17bbd3880b968ca60869edab8f015be30674ad4d3d260f",bytes_to_hex(&seed));
+        assert_eq!("0x15cba277c500b4e0c777d563278130f4c24b52532b3c8c45e051d417bebc5c007243c07d2e341a2d7c17bbd3880b968ca60869edab8f015be30674ad4d3d260f",bytes_to_string(&seed));
     }
 
     #[test]
@@ -166,7 +165,7 @@ mod tests {
                 .drive(format!("m/44'/60'/0'/0/{}", id))
                 .expect("Bip32 drive key");
 
-            assert_eq!(bytes_to_hex(&key.private_key), pk);
+            assert_eq!(bytes_to_string(&key.private_key), pk);
 
             let address = Address::from_pub_key_compressed(key.public_key).expect("Parse address");
 

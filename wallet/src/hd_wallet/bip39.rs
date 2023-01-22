@@ -195,7 +195,8 @@ pub mod languages {
 
 #[cfg(test)]
 mod tests {
-    use ethers_utils_rs::hex::hex_to_bytes;
+
+    use ethers_types_rs::bytes::bytes_from_str;
 
     use super::{languages::en_us, Bip39Generator};
 
@@ -214,7 +215,7 @@ mod tests {
 
     #[test]
     fn test_with_entropy() {
-        let entropy = hex_to_bytes("0x7b6228a8803ad9883bca8b46c55a2c3f").expect("Parse entropy");
+        let entropy = bytes_from_str("0x7b6228a8803ad9883bca8b46c55a2c3f").expect("Parse entropy");
 
         let gen = Bip39Generator::new(en_us());
 
@@ -354,7 +355,7 @@ mod tests {
         let gen = Bip39Generator::new(en_us());
 
         for vector in &test_vectors {
-            let entropy = hex_to_bytes(&vector.0).unwrap();
+            let entropy = bytes_from_str(&vector.0).unwrap();
             let mnemonic_expected = vector.1;
 
             let mnemonic = gen.mnemonic_from_entropy(&entropy).expect("From entropy");
