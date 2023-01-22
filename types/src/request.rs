@@ -1,5 +1,3 @@
-use ethers_utils_rs::types::Address;
-
 use serde::{Deserialize, Serialize};
 
 fn rlp_opt<T: rlp::Encodable>(rlp: &mut rlp::RlpStream, opt: &Option<T>) {
@@ -40,7 +38,7 @@ macro_rules! tx_json_support {
 #[serde(untagged)]
 pub enum NameOrAddress {
     Name(String),
-    Address(Address),
+    Address(super::address::Address),
 }
 
 mod legacy;

@@ -73,7 +73,7 @@ impl Eip2930TransactionRequest {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 pub struct AccessList(Vec<Access>);
 
 impl Encodable for AccessList {
@@ -92,7 +92,7 @@ impl Encodable for AccessList {
 
 hex_fixed_def!(StorageKey, 32);
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Access {
     pub address: Address,
