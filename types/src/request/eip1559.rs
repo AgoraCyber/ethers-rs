@@ -1,14 +1,13 @@
-use ethabi::ethereum_types::U256;
-use ethers_utils_rs::{
-    hash::keccak256,
-    types::{Address, Bytecode, Signature, TransactionHash},
-};
+use ethabi::ethereum_types::{Address, Signature, H256, U256};
+use ethers_utils_rs::hash::keccak256;
 use rlp::Encodable;
 use serde::{Deserialize, Serialize};
 
+use crate::{signature::SignatureVRS, Bytecode};
+
 use super::{rlp_opt, AccessList};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Eip1559TransactionRequest {
     pub chain_id: U256,
@@ -46,7 +45,7 @@ impl Encodable for Eip1559TransactionRequest {
 
 impl Eip1559TransactionRequest {
     /// Generate legacy transaction sign hash.
-    pub fn sign_hash(&self) -> TransactionHash {
+    pub fn sign_hash(&self) -> H256 {
         keccak256(self.rlp()).into()
     }
     fn to_bytecode(mut buff: Vec<u8>) -> Bytecode {

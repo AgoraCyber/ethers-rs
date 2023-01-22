@@ -40,10 +40,9 @@ impl KeyProvider for Vec<u8> {
 #[cfg(test)]
 mod tests {
 
-    use ethers_utils_rs::{
-        hash::keccak256,
-        types::{Address, AddressEx, Eip55, Signature},
-    };
+    use ethers_types_rs::signature::SignatureVRS;
+    use ethers_types_rs::{Address, AddressEx, Eip55};
+    use ethers_utils_rs::hash::keccak256;
 
     use super::Wallet;
 
@@ -83,9 +82,7 @@ mod tests {
 
         let signature = wallet.sign(&hashed).expect("personal_sign");
 
-        let signature: Signature = signature.try_into().expect("0");
-
-        assert_eq!(expected, signature.to_string());
+        assert_eq!(expected, format!("{:#x}", signature));
 
         assert!(wallet
             .verify(&hashed, signature.r(), signature.s())

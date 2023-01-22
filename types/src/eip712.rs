@@ -8,7 +8,9 @@ use std::{
 use ethabi::{encode, Bytes, ParamType, Token, Uint};
 use serde::{Deserialize, Deserializer, Serialize};
 
-use crate::{hash::keccak256, types::Address};
+use crate::Address;
+
+use ethers_utils_rs::hash::keccak256;
 
 /// Custom types for `TypedData`
 pub type Types = BTreeMap<String, Vec<Eip712DomainType>>;

@@ -137,10 +137,8 @@ impl DriveKey {
 
 #[cfg(test)]
 mod tests {
-    use ethers_utils_rs::{
-        hex::bytes_to_hex,
-        types::{Address, AddressEx, Eip55},
-    };
+    use ethers_types_rs::{Address, AddressEx, Eip55};
+    use ethers_utils_rs::hex::bytes_to_hex;
 
     use super::{mnemonic_to_send, DriveKey};
 

@@ -1,14 +1,16 @@
-use ethabi::ethereum_types::{U256, U64};
-use ethers_utils_rs::{
-    hash::keccak256,
-    types::{Address, Bytecode, Signature, TransactionHash},
-};
+use ethabi::ethereum_types::{H256, U256, U64};
+use ethers_utils_rs::hash::keccak256;
 use rlp::{Encodable, RlpStream};
 use serde::{Deserialize, Serialize};
 
 use super::rlp_opt;
 
-#[derive(Debug, Serialize, Deserialize)]
+use crate::block::Bytecode;
+use crate::signature::SignatureVRS;
+use crate::Address;
+use crate::Signature;
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct LegacyTransactionRequest {
     /// Transaction nonce
@@ -46,7 +48,7 @@ impl Encodable for LegacyTransactionRequest {
 
 impl LegacyTransactionRequest {
     /// Generate legacy transaction sign hash.
-    pub fn sign_hash(&self) -> TransactionHash {
+    pub fn sign_hash(&self) -> H256 {
         keccak256(self.rlp()).into()
     }
 

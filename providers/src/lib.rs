@@ -3,12 +3,17 @@ use std::fmt::{Debug, Display};
 use jsonrpc_rs::RPCResult;
 
 use ethers_utils_rs::hex;
-use ethers_utils_rs::types::*;
+
+use ethers_types_rs::*;
+
+use ethers_types_rs::Address;
 
 pub mod error;
 pub mod providers;
 
 pub use error::ProviderError;
+
+pub type BlockHash = H256;
 
 /// Ether network api provider
 ///
@@ -190,7 +195,7 @@ impl Provider {
         &mut self,
         transaction: TX,
         block_number_or_tag: Option<BT>,
-    ) -> RPCResult<Number>
+    ) -> RPCResult<U256>
     where
         TX: TryInto<Transaction>,
         TX::Error: Debug + Display,
@@ -219,7 +224,7 @@ impl Provider {
         &mut self,
         transaction: TX,
         block_number_or_tag: Option<BT>,
-    ) -> RPCResult<Number>
+    ) -> RPCResult<U256>
     where
         TX: TryInto<Transaction>,
         TX::Error: Debug + Display,
@@ -244,14 +249,14 @@ impl Provider {
     }
 
     /// Returns the current price gas in wei.
-    pub async fn eth_gas_price(&mut self) -> RPCResult<Number> {
+    pub async fn eth_gas_price(&mut self) -> RPCResult<U256> {
         self.rpc_client
             .call("eth_gasPrice", Vec::<String>::new())
             .await
     }
 
     /// Returns the current maxPriorityFeePerGas per gas in wei.
-    pub async fn eth_max_priority_fee_per_gas(&mut self) -> RPCResult<Number> {
+    pub async fn eth_max_priority_fee_per_gas(&mut self) -> RPCResult<U256> {
         self.rpc_client
             .call("eth_maxPriorityFeePerGas", Vec::<String>::new())
             .await
@@ -265,7 +270,7 @@ impl Provider {
         reward_percentiles: RP,
     ) -> RPCResult<FeeHistory>
     where
-        N: TryInto<Number>,
+        N: TryInto<U256>,
         N::Error: Debug + Display,
         BT: TryInto<BlockNumberOrTag>,
         BT::Error: Debug + Display,
@@ -284,7 +289,7 @@ impl Provider {
     }
 
     /// Returns transaction base fee per gas and effective priority fee per gas for the requested/supported block range.
-    pub async fn eth_new_filter<F>(&mut self, filter: F) -> RPCResult<Number>
+    pub async fn eth_new_filter<F>(&mut self, filter: F) -> RPCResult<U256>
     where
         F: TryInto<Filter>,
         F::Error: Debug + Display,
@@ -295,14 +300,14 @@ impl Provider {
     }
 
     /// Creates new filter in the node,to notify when a new block arrives.
-    pub async fn eth_new_block_filter(&mut self) -> RPCResult<Number> {
+    pub async fn eth_new_block_filter(&mut self) -> RPCResult<U256> {
         self.rpc_client
             .call("eth_newBlockFilter", Vec::<String>::new())
             .await
     }
 
     /// Creates new filter in the node,to notify when new pending transactions arrive.
-    pub async fn eth_new_pending_transaction_filter(&mut self) -> RPCResult<Number> {
+    pub async fn eth_new_pending_transaction_filter(&mut self) -> RPCResult<U256> {
         self.rpc_client
             .call("eth_newPendingTransactionFilter", Vec::<String>::new())
             .await
@@ -311,7 +316,7 @@ impl Provider {
     /// Uninstalls a filter with given id
     pub async fn eth_uninstall_filter<N>(&mut self, id: N) -> RPCResult<bool>
     where
-        N: TryInto<Number>,
+        N: TryInto<U256>,
         N::Error: Debug + Display,
     {
         let id = id.try_into().map_err(jsonrpc_rs::map_error)?;
@@ -323,7 +328,7 @@ impl Provider {
 
     pub async fn eth_get_filter_changes<N>(&mut self, id: N) -> RPCResult<Option<PollLogs>>
     where
-        N: TryInto<Number>,
+        N: TryInto<U256>,
         N::Error: Debug + Display,
     {
         let id = id.try_into().map_err(jsonrpc_rs::map_error)?;
@@ -334,7 +339,7 @@ impl Provider {
     /// Returns any arrays of all logs matching filter with given id
     pub async fn eth_get_filter_logs<N>(&mut self, id: N) -> RPCResult<Option<PollLogs>>
     where
-        N: TryInto<Number>,
+        N: TryInto<U256>,
         N::Error: Debug + Display,
     {
         let id = id.try_into().map_err(jsonrpc_rs::map_error)?;
@@ -381,7 +386,7 @@ impl Provider {
     }
 
     /// Returns the balance of the account given address.
-    pub async fn eth_get_balance<A>(&mut self, address: A) -> RPCResult<Number>
+    pub async fn eth_get_balance<A>(&mut self, address: A) -> RPCResult<U256>
     where
         A: TryInto<Address>,
         A::Error: Debug + Display,
@@ -392,7 +397,7 @@ impl Provider {
     }
 
     /// Returns the number of transactions sent from an address
-    pub async fn eth_get_transaction_count<A>(&mut self, address: A) -> RPCResult<Number>
+    pub async fn eth_get_transaction_count<A>(&mut self, address: A) -> RPCResult<U256>
     where
         A: TryInto<Address>,
         A::Error: Debug + Display,
@@ -405,7 +410,7 @@ impl Provider {
     }
 
     /// Submit a raw transaction.
-    pub async fn eth_send_raw_transaction<B>(&mut self, raw: B) -> RPCResult<Number>
+    pub async fn eth_send_raw_transaction<B>(&mut self, raw: B) -> RPCResult<U256>
     where
         B: TryInto<Bytecode>,
         B::Error: Debug + Display,
@@ -422,7 +427,7 @@ impl Provider {
         tx_hash: H,
     ) -> RPCResult<Option<Transaction>>
     where
-        H: TryInto<TransactionHash>,
+        H: TryInto<H256>,
         H::Error: Debug + Display,
     {
         let tx_hash = tx_hash.try_into().map_err(jsonrpc_rs::map_error)?;
@@ -438,7 +443,7 @@ impl Provider {
         tx_hash: H,
     ) -> RPCResult<Option<TransactionReceipt>>
     where
-        H: TryInto<TransactionHash>,
+        H: TryInto<H256>,
         H::Error: Debug + Display,
     {
         let tx_hash = tx_hash.try_into().map_err(jsonrpc_rs::map_error)?;
@@ -452,12 +457,11 @@ impl Provider {
 #[cfg(test)]
 mod tests {
 
+    use ethers_types_rs::SyncingStatus;
     use jsonrpc_rs::RPCResult;
     use serde_json::json;
 
     use crate::providers::http;
-
-    use ethers_utils_rs::types::*;
 
     #[async_std::test]
     async fn test_block_number() -> RPCResult<()> {

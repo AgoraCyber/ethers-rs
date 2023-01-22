@@ -1,9 +1,19 @@
-mod address;
+pub mod address;
 
 pub use address::*;
 
-mod request;
+pub mod request;
 
 pub use request::*;
 
-mod block;
+pub mod block;
+pub use block::*;
+
+pub mod eip712;
+
+pub use eip712::*;
+
+pub mod signature;
+pub use signature::*;
+
+pub use ethabi::ethereum_types::*;

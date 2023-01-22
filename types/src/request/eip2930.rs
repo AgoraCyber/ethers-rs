@@ -1,15 +1,13 @@
-use ethabi::ethereum_types::H256;
-use ethers_utils_rs::{
-    hash::keccak256,
-    hex_fixed_def,
-    types::{Address, Bytecode, Signature, TransactionHash},
-};
+use ethabi::ethereum_types::{Signature, H256};
+use ethers_utils_rs::{hash::keccak256, hex_fixed_def};
 use rlp::Encodable;
 use serde::{Deserialize, Serialize};
 
+use crate::{signature::SignatureVRS, Bytecode};
+
 use super::LegacyTransactionRequest;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct Eip2930TransactionRequest {
     #[serde(flatten)]
@@ -30,7 +28,7 @@ impl Encodable for Eip2930TransactionRequest {
 
 impl Eip2930TransactionRequest {
     /// Generate legacy transaction sign hash.
-    pub fn sign_hash(&self) -> TransactionHash {
+    pub fn sign_hash(&self) -> H256 {
         keccak256(self.rlp()).into()
     }
 
@@ -95,7 +93,7 @@ hex_fixed_def!(StorageKey, 32);
 #[derive(Debug, Serialize, Deserialize, Default, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Access {
-    pub address: Address,
+    pub address: crate::Address,
 
     pub storage_keys: Vec<H256>,
 }

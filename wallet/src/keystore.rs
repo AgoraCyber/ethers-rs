@@ -4,11 +4,8 @@ use aes::{
     cipher::{self, InnerIvInit, KeyInit, StreamCipherCore},
     Aes128,
 };
-use ethers_utils_rs::{
-    hash::pbkdf2::pbkdf2_hmac,
-    hex_def,
-    types::{Address, AddressEx},
-};
+use ethers_types_rs::{Address, AddressEx};
+use ethers_utils_rs::{hash::pbkdf2::pbkdf2_hmac, hex_def};
 use rand::{CryptoRng, Rng};
 use scrypt::{scrypt, Params as ScryptParams};
 use serde::{Deserialize, Serialize};
@@ -270,10 +267,8 @@ impl KeyStore {
 
 #[cfg(test)]
 mod tests {
-    use ethers_utils_rs::{
-        hex::bytes_to_hex,
-        types::{Address, AddressEx},
-    };
+    use ethers_types_rs::{Address, AddressEx};
+    use ethers_utils_rs::hex::bytes_to_hex;
 
     use super::{KeyStore, KeyStoreEncrypt};
 

@@ -1,9 +1,7 @@
 //! Create signer from local wallet.
 
-use ethers_utils_rs::{
-    eip712::TypedData,
-    types::{Address, AddressEx, Bytecode, Eip55, Signature, Transaction},
-};
+use ethers_types_rs::*;
+
 use ethers_wallet_rs::wallet::Wallet;
 use futures::{
     channel::mpsc::{self, SendError, Sender},
@@ -118,12 +116,12 @@ impl WalletSigner for Wallet {
 }
 
 #[allow(unused)]
-async fn sign_transaction(wallet: Wallet, t: Transaction) -> RPCResult<Option<Signature>> {
-    let hashed = t.sighash();
+async fn sign_transaction(wallet: Wallet, t: TypedTransaction) -> RPCResult<Option<Signature>> {
+    let hashed = t.sign_hash();
 
     let signature = wallet.sign(hashed).map_err(map_error)?;
 
-    Ok(Some(signature.into()))
+    Ok(Some(signature))
 }
 
 #[allow(unused)]
@@ -139,7 +137,7 @@ async fn decrypt(wallet: Wallet, data: Bytecode) -> RPCResult<Option<Bytecode>> 
 #[cfg(test)]
 mod tests {
 
-    use ethers_utils_rs::types::Transaction;
+    use ethers_types_rs::{Eip2930TransactionRequest, LegacyTransactionRequest, SignatureVRS};
     use ethers_wallet_rs::wallet::Wallet;
     use serde_json::json;
 
@@ -157,13 +155,14 @@ mod tests {
             .try_into_signer()
             .expect("Try convert wallet into signer");
 
-        let tx: Transaction = json!({
+        let tx: LegacyTransactionRequest = json!({
             "nonce": "0x1",
             "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
             "value":"0x1",
             "input":"0x",
             "gas":"0x60000",
-            "gasPrice": "0x60000111"
+            "gasPrice": "0x60000111",
+            "chainId": "0x1"
 
         })
         .try_into()
@@ -179,18 +178,20 @@ mod tests {
         log::debug!("s {}", signature.s());
 
         assert_eq!(
-            "0xf864018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c801801ba0c348ad24113ab8abe314937604694c135f58d5d93c9ec6c5a9fb28671ef68423a070e70600040a09f62a766d9744798ac8b459a85e6e3bfd3fd636118cb62126fe",
-            tx.rlp_signed(&signature).to_string()
+            "0xf864018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c8018026a06c7e1e13070e6f10e51d7d20e986c59fd080fc6afc5508f44e8b0a84a58b7d1aa013c20fa2b6d77ae6814a41b674946387dde6401c73eb0cab2246a2981c48e344",
+            tx.rlp_signed(signature).to_string()
         );
 
-        let tx: Transaction = json!({
+        let tx: Eip2930TransactionRequest = json!({
             "type": "0x01",
             "nonce": "0x1",
             "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
             "value":"0x1",
             "input":"0x",
             "gas":"0x60000",
-            "gasPrice": "0x60000111"
+            "gasPrice": "0x60000111",
+            "chainId": "0x1",
+            "accessList":[]
 
         })
         .try_into()
@@ -206,8 +207,8 @@ mod tests {
         log::debug!("s {}", signature.s());
 
         assert_eq!(
-            "0x01f86680018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c80180c001a083e9c85dd4f083d6f269f248da585803638c15ceeaeb53b49f461f41aec5a8d5a0622ee2778000be5acc2f101c46eba1bd4203911daee182144ef59469fd913b34",
-            tx.rlp_signed(&signature).to_string()
+            "0x01f86601018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c80180c080a0fd6402ef803609fce890c09304abd681fe29c25616e960c1f44db1a026f5d03ba00867e433e4ddd6e8b0c8f283c08a7f81d2cc41cc29aaa8631d7b979a8ec9e8ec",
+            tx.rlp_signed(signature).to_string()
         );
     }
 }

@@ -1,6 +1,7 @@
-pub use ethabi::Address;
-use ethers_utils_rs::hash::keccak256;
+use ethers_utils_rs::{hash::keccak256, hex::bytes_to_hex};
 use hex::FromHexError;
+
+use ethabi::ethereum_types::Address;
 
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum AddressError {
@@ -84,7 +85,7 @@ pub trait Eip55: Sized {
 
 impl Eip55 for Address {
     fn to_checksum_string(&self) -> String {
-        let mut data = self.to_string();
+        let mut data = bytes_to_hex(self.as_bytes());
 
         let digest = keccak256(&data.as_bytes()[2..]);
 

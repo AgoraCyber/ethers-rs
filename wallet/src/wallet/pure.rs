@@ -1,4 +1,4 @@
-use ethers_utils_rs::types::Number;
+use ethers_types_rs::U256;
 use k256::{
     ecdsa::{
         self,
@@ -35,7 +35,7 @@ impl LocalWalletRustCrypto {
     pub fn recover<H>(
         &self,
         hashed: H,
-        signature: ethers_utils_rs::types::Signature,
+        signature: ethers_types_rs::Signature,
         compressed: bool,
     ) -> anyhow::Result<Vec<u8>>
     where
@@ -56,7 +56,7 @@ impl LocalWalletRustCrypto {
     }
 
     /// Sign hashed data and returns signature
-    pub fn sign<S>(&self, hashed: S) -> anyhow::Result<ethers_utils_rs::types::Signature>
+    pub fn sign<S>(&self, hashed: S) -> anyhow::Result<ethers_types_rs::Signature>
     where
         S: AsRef<[u8]>,
     {
@@ -82,22 +82,25 @@ impl LocalWalletRustCrypto {
 
         assert_eq!(result.len(), 65);
 
-        Ok(result.try_into()?)
+        let signature: [u8; 65] = result.try_into().expect("Convert to [u8;65]");
+
+        Ok(signature.into())
     }
 
     pub fn verify<R, S>(&self, hashed: &[u8], r: R, s: S) -> anyhow::Result<bool>
     where
-        R: TryInto<Number>,
-        S: TryInto<Number>,
+        R: TryInto<U256>,
+        S: TryInto<U256>,
         R::Error: std::error::Error + Sync + Send + 'static,
         S::Error: std::error::Error + Sync + Send + 'static,
     {
-        let r = r.try_into()?;
-        let mut s = s.try_into()?;
+        let mut signature = [0; 64];
 
-        let mut signature = r.0;
+        let r: U256 = r.try_into()?;
+        let s: U256 = s.try_into()?;
 
-        signature.append(&mut s.0);
+        r.to_big_endian(&mut signature[0..32]);
+        s.to_big_endian(&mut signature[32..]);
 
         let verifying_key = self.sign_key.verifying_key();
 

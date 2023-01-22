@@ -5,7 +5,7 @@ use ethers_utils_rs::hex_def;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::*;
 
-use crate::address::Address;
+use crate::Address;
 
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum BlockError {
@@ -111,7 +111,7 @@ pub enum TransactionOrHash {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum TypedTransaction {
+pub enum TransactionType {
     // 0x00
     #[serde(rename = "0x00")]
     Legacy,
@@ -132,7 +132,7 @@ pub struct Transaction {
     /// 2. EIP2930 (state access lists) `0x01`
     /// 3. EIP1559 0x02
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<TypedTransaction>,
+    pub r#type: Option<TransactionType>,
     /// transaction nonce
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nonce: Option<U256>,
@@ -189,6 +189,28 @@ pub struct Transaction {
     /// s-value of the secp256k1
     #[serde(skip_serializing_if = "Option::is_none")]
     pub s: Option<U256>,
+}
+
+impl TryFrom<&str> for Transaction {
+    type Error = serde_json::Error;
+
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        serde_json::from_str(value)
+    }
+}
+
+impl TryFrom<String> for Transaction {
+    type Error = serde_json::Error;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::try_from(value.as_ref())
+    }
+}
+
+impl TryFrom<serde_json::Value> for Transaction {
+    type Error = serde_json::Error;
+    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
+        serde_json::from_value(value)
+    }
 }
 
 /// eth_getBlockByNumber parameter `Block`
@@ -428,4 +450,51 @@ mod tests {
             }))
         );
     }
+}
+
+#[serde_as]
+#[derive(Default, Serialize, Deserialize, Debug)]
+pub struct TransactionReceipt {
+    /// From address
+    pub from: Address,
+    /// To address
+    pub to: Option<Address>,
+    /// Contract address created by this transaction.
+    pub constract_address: Option<Address>,
+    /// Gas used
+    #[serde(rename = "gasUsed")]
+    pub gas_used: U256,
+    /// Gas used
+    #[serde(rename = "cumulativeGasUsed")]
+    pub cumulative_gas_used: U256,
+
+    #[serde(rename = "effectiveGasPrice")]
+    pub effective_gas_price: U256,
+
+    #[serde(rename = "transactionIndex")]
+    transaction_index: U256,
+    /// Block hash
+    #[serde(rename = "blockHash")]
+    pub block_hash: H256,
+    /// Block number
+    #[serde(rename = "blockNumber")]
+    pub block_number: U256,
+    /// 1 for success, 0 for failure.
+    pub status: Option<Status>,
+    /// Logs
+    pub logs: Vec<Log>,
+    /// Logs bloom filter string
+    pub logs_bloom: BloomFilter,
+    /// Only include before the Byzantium upgrade
+    pub root: Option<H256>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Status {
+    // 0x00
+    #[serde(rename = "0x1")]
+    Success,
+    // 0x01
+    #[serde(rename = "0x0")]
+    Failure,
 }
