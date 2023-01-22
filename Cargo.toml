@@ -6,6 +6,7 @@ members = [
     "signer",
     "wallet",
     "types",
+    "hash",
     # "parity/ethereum-types",
     # "parity/fixed-hash",
     # "parity/primitive-types",

@@ -1,7 +1,6 @@
-use crate::request::AccessList;
+use crate::{bytes_def, request::AccessList};
 
 use ethabi::ethereum_types::{H256, U256};
-use ethers_utils_rs::hex_def;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::*;
 
@@ -13,9 +12,9 @@ pub enum BlockError {
     InvalidSyning,
 }
 
-hex_def!(BloomFilter);
-hex_def!(Difficulty);
-hex_def!(Bytecode);
+bytes_def!(BloomFilter);
+bytes_def!(Difficulty);
+bytes_def!(Bytecode);
 
 #[serde_as]
 #[derive(Serialize, Deserialize)]

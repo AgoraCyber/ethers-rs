@@ -1,0 +1,17 @@
+[package]
+name = "ethers-hash-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+sha3 = {version = "0.10.6", optional = true}
+digest = {version = "0.10.6", optional = true}
+hmac = {version = "0.12.1", optional = true}
+pbkdf2 = {version = "^0.11",optional = true}
+
+
+[features]
+default = ["rust_crypto"]
+rust_crypto = ["sha3","digest","hmac","pbkdf2"]
