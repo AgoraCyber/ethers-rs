@@ -3,6 +3,7 @@ use ethers_signer_rs::signer::Signer;
 use ethers_types_rs::{
     Address, BlockNumberOrTag, Bytecode, Eip55, LegacyTransactionRequest, H256, U256,
 };
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::Error;
@@ -11,6 +12,23 @@ pub struct ContractContext {
     pub address: Address,
     pub provider: Provider,
     pub signer: Option<Signer>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct TxOptions {
+    /// Mannul set gas price.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    gas_price: Option<U256>,
+    /// Transferring ether values.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    value: Option<U256>,
+}
+
+impl<'a> TryFrom<&'a str> for TxOptions {
+    type Error = anyhow::Error;
+    fn try_from(value: &'a str) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_str(value)?)
+    }
 }
 
 impl ContractContext {
@@ -42,8 +60,8 @@ impl ContractContext {
     pub async fn send_raw_transaction(
         &mut self,
         method: &str,
-        value: U256,
         call_data: Vec<u8>,
+        ops: TxOptions,
     ) -> anyhow::Result<H256> {
         let mut provider = self.provider.clone();
 
@@ -80,7 +98,7 @@ impl ContractContext {
             nonce: Some(nonce),
             to: Some(self.address.clone()),
             data: Some(call_data.into()),
-            value: Some(value),
+            value: ops.value,
             ..Default::default()
         };
 
@@ -95,7 +113,11 @@ impl ContractContext {
 
         // Get gas price
 
-        let gas_price = provider.eth_gas_price().await?;
+        let gas_price = if let Some(gas_price) = ops.gas_price {
+            gas_price
+        } else {
+            provider.eth_gas_price().await?
+        };
 
         log::debug!(target: method, "Fetch gas price, {:#x}", gas_price);
 

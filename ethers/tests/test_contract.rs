@@ -5,7 +5,6 @@ use ethers_wallet_rs::wallet::Wallet;
 
 contract!(PersonalWallet, file = "tests/wallet.json");
 
-#[allow(unused)]
 #[async_std::test]
 async fn test_weth() {
     _ = pretty_env_logger::try_init();
@@ -21,17 +20,24 @@ async fn test_weth() {
                 .expect("Convert local wallet into signer"),
         );
 
-    let address = wallet.weth().await.expect("Get weth address");
+    let address = wallet.owner().await.expect("Get contract owner");
 
     assert_eq!(
         address.to_checksum_string(),
-        "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+        "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
     );
 
     wallet
         .transfer_ownership("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
         .await
         .expect("Transfer ownership");
+
+    let address = wallet.owner().await.expect("Get contract owner");
+
+    assert_eq!(
+        address.to_checksum_string(),
+        "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+    );
 }
 
 #[test]

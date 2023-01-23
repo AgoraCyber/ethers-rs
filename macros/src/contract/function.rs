@@ -218,7 +218,7 @@ impl Function {
                     Ok(result)
                 }
             },
-            StateMutability::NonPayable | StateMutability::Payable => quote! {
+            StateMutability::NonPayable => quote! {
                 pub async fn #module_name<#(#declarations),*>(&mut self, #(#definitions),*) -> ethers_rs::Result<ethers_rs::H256>
                 where #(#where_clauses,)*
                 {
@@ -227,7 +227,26 @@ impl Function {
 
                     let bytes = f.encode_input(&tokens).expect(INTERNAL_ERR);
 
-                    let result = self.0.send_raw_transaction(stringify!(#module_name),Default::default(),bytes).await?;
+                    let result = self.0.send_raw_transaction(stringify!(#module_name), bytes, Default::default()).await?;
+
+                    Ok(result)
+                }
+            },
+            StateMutability::Payable => quote! {
+                pub async fn #module_name<#(#declarations),*, Ops>(&mut self, #(#definitions,)* ops: Ops) -> ethers_rs::Result<ethers_rs::H256>
+                where
+                #(#where_clauses,)*
+                Ops: TryInto<ethers_rs::TxOptions>,
+                Ops::Error: std::error::Error + Send + Sync + 'static,
+                {
+                    let ops = ops.try_into()?;
+
+                    let f = functions::#module_name::function();
+                    let tokens = vec![#(#tokenize),*];
+
+                    let bytes = f.encode_input(&tokens).expect(INTERNAL_ERR);
+
+                    let result = self.0.send_raw_transaction(stringify!(#module_name), bytes, ops).await?;
 
                     Ok(result)
                 }

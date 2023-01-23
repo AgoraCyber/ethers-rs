@@ -12,6 +12,8 @@ serde_json = "^1.0"
 thiserror = "1.0.38"
 log = "0.4.16"
 
+serde = { version = "^1.0", features = ["derive"] }
+
 ethers-macros-rs = {path = "../macros"}
 ethers-providers-rs = {path = "../providers"}
 ethers-types-rs = {path = "../types"}
