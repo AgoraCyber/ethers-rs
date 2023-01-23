@@ -1,0 +1,17 @@
+[package]
+name = "hardhat"
+version = "0.1.0"
+edition = "2021"
+description = "ethers-rs plugin for communication with hardhat project." 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-process = "^1.6.0"
+futures = {version = "0.3.25",features = ["thread-pool"]}
+log = "0.4.16"
+
+[dev-dependencies]
+dotenv = "0.15.0"
+pretty_env_logger = "0.4.0"
+async-std = {version = "1.11.0", features = ["attributes", "default"]}
+criterion = {version = "0.4", features = ["async_futures", "html_reports"]}
