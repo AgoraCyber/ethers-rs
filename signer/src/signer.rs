@@ -1,6 +1,6 @@
 use std::fmt::{Debug, Display};
 
-use ethers_types_rs::{block::Bytecode, eip712, Signature, TypedTransactionRequest};
+use ethers_types_rs::{block::Bytecode, eip712, Address, Signature, TypedTransactionRequest};
 use jsonrpc_rs::RPCResult;
 
 #[derive(Clone)]
@@ -15,7 +15,7 @@ impl Signer {
     }
 
     /// Returns the signed transaction of the parameter `transaction_request`
-    pub async fn sign_eth_transaction<T>(&mut self, transaction_request: T) -> RPCResult<Signature>
+    pub async fn sign_eth_transaction<T>(&mut self, transaction_request: T) -> RPCResult<Bytecode>
     where
         T: TryInto<TypedTransactionRequest>,
         T::Error: Display + Debug,
@@ -68,5 +68,10 @@ impl Signer {
         self.rpc_client
             .call("signer_decrypt", vec![encrypt_data])
             .await
+    }
+
+    /// Get associating signer account addresses
+    pub async fn accounts(&mut self) -> RPCResult<Vec<Address>> {
+        self.rpc_client.call("signer_accounts", ()).await
     }
 }

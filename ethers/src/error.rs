@@ -10,6 +10,13 @@ pub enum Error {
 
     #[error("Uknown error, {0}")]
     Unknown(String),
+
+    /// Contract call expect signer
+    #[error("Expect signer to invoke {0}")]
+    InvokeMethodExpectSigner(String),
+
+    #[error("Signer accounts method empty accounts array")]
+    SignerAccounts,
 }
 
 impl From<ethabi::Error> for Error {

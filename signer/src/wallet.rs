@@ -103,6 +103,13 @@ impl WalletSigner for Wallet {
             #[allow(unused_parens)]
             server.async_handle("signer_decrypt", move |data| decrypt(wallet.clone(), data));
 
+            let pub_key = self.public_key(false).map_err(map_error)?;
+
+            let address = Address::from_pub_key(pub_key.as_slice()).map_err(map_error)?;
+
+            #[allow(unused_parens)]
+            server.async_handle("signer_accounts", move |()| accounts(address.clone()));
+
             server.accept(server_transport);
 
             Ok(())
@@ -119,17 +126,24 @@ impl WalletSigner for Wallet {
 async fn sign_transaction(
     wallet: Wallet,
     t: TypedTransactionRequest,
-) -> RPCResult<Option<Signature>> {
+) -> RPCResult<Option<Bytecode>> {
     let hashed = t.sign_hash();
 
     let signature = wallet.sign(hashed).map_err(map_error)?;
 
-    Ok(Some(signature))
+    t.rlp_signed(signature);
+
+    Ok(Some(t.rlp_signed(signature)))
 }
 
 #[allow(unused)]
 async fn sign_typed_data(wallet: Wallet, data: TypedData) -> RPCResult<Option<Bytecode>> {
     unimplemented!()
+}
+
+#[allow(unused)]
+async fn accounts(address: Address) -> RPCResult<Option<Vec<Address>>> {
+    Ok(Some(vec![address]))
 }
 
 #[allow(unused)]
@@ -142,7 +156,7 @@ mod tests {
 
     use ethers_types_rs::{
         bytes::bytes_to_string, Eip1559TransactionRequest, Eip2930TransactionRequest,
-        LegacyTransactionRequest, SignatureVRS,
+        LegacyTransactionRequest,
     };
     use ethers_wallet_rs::wallet::Wallet;
     use serde_json::json;
@@ -174,18 +188,14 @@ mod tests {
         .try_into()
         .expect("Create tx");
 
-        let signature = signer
+        let signed_tx = signer
             .sign_eth_transaction(tx.clone())
             .await
             .expect("Sign tx");
 
-        log::debug!("v {}", signature.v());
-        log::debug!("r {}", signature.r());
-        log::debug!("s {}", signature.s());
-
         assert_eq!(
             "0xf864018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c8018026a06c7e1e13070e6f10e51d7d20e986c59fd080fc6afc5508f44e8b0a84a58b7d1aa013c20fa2b6d77ae6814a41b674946387dde6401c73eb0cab2246a2981c48e344",
-            tx.rlp_signed(signature).to_string()
+            bytes_to_string(signed_tx),
         );
 
         let tx: Eip2930TransactionRequest = json!({
@@ -203,18 +213,14 @@ mod tests {
         .try_into()
         .expect("Create tx");
 
-        let signature = signer
+        let signed_tx = signer
             .sign_eth_transaction(tx.clone())
             .await
             .expect("Sign tx");
 
-        log::debug!("v {}", signature.v());
-        log::debug!("r {}", signature.r());
-        log::debug!("s {}", signature.s());
-
         assert_eq!(
             "0x01f86601018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c80180c080a0fd6402ef803609fce890c09304abd681fe29c25616e960c1f44db1a026f5d03ba00867e433e4ddd6e8b0c8f283c08a7f81d2cc41cc29aaa8631d7b979a8ec9e8ec",
-            tx.rlp_signed(signature).to_string()
+            bytes_to_string(signed_tx)
         );
     }
 

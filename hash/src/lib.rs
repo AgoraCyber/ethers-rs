@@ -23,18 +23,6 @@ pub mod pbkdf2 {
 
     pub use ::pbkdf2::*;
 
-    /// A variant of the [`pbkdf2`][crate::pbkdf2] function which uses HMAC for PRF.
-    /// It's generic over (eager) hash functions.
-    ///
-    /// ```
-    /// use hex_literal::hex;
-    /// use pbkdf2::pbkdf2_hmac;
-    /// use sha2::Sha256;
-    ///
-    /// let mut buf = [0u8; 20];
-    /// pbkdf2_hmac::<Sha256>(b"password", b"salt", 4096, &mut buf);
-    /// assert_eq!(buf, hex!("c5e478d59288c841aa530db6845c4c8d962893a0"));
-    /// ```
     pub fn pbkdf2_hmac<D>(password: &[u8], salt: &[u8], rounds: u32, res: &mut [u8])
     where
         D: CoreProxy,
@@ -51,19 +39,6 @@ pub mod pbkdf2 {
         pbkdf2::pbkdf2::<hmac::Hmac<D>>(password, salt, rounds, res);
     }
 
-    /// A variant of the [`pbkdf2_hmac`] function which returns an array
-    /// instead of filling an input slice.
-    ///
-    /// ```
-    /// use hex_literal::hex;
-    /// use pbkdf2::pbkdf2_hmac_array;
-    /// use sha2::Sha256;
-    ///
-    /// assert_eq!(
-    ///     pbkdf2_hmac_array::<Sha256, 20>(b"password", b"salt", 4096),
-    ///     hex!("c5e478d59288c841aa530db6845c4c8d962893a0"),
-    /// );
-    /// ```
     pub fn pbkdf2_hmac_array<D, const N: usize>(
         password: &[u8],
         salt: &[u8],

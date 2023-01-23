@@ -180,7 +180,7 @@ impl Provider {
         block_number_or_tag: Option<BT>,
     ) -> RPCResult<U256>
     where
-        TX: TryInto<Transaction>,
+        TX: TryInto<TypedTransactionRequest>,
         TX::Error: Debug + Display,
         BT: TryInto<BlockNumberOrTag>,
         BT::Error: Debug + Display,
@@ -393,7 +393,7 @@ impl Provider {
     }
 
     /// Submit a raw transaction.
-    pub async fn eth_send_raw_transaction<B>(&mut self, raw: B) -> RPCResult<U256>
+    pub async fn eth_send_raw_transaction<B>(&mut self, raw: B) -> RPCResult<H256>
     where
         B: TryInto<Bytecode>,
         B::Error: Debug + Display,

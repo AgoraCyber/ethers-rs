@@ -1,6 +1,7 @@
 use crate::gen::CodeGen;
 
 use super::utils::*;
+use ethabi::StateMutability;
 use heck::ToSnakeCase;
 use proc_macro2::Span;
 use proc_macro2::TokenStream;
@@ -199,21 +200,38 @@ impl Function {
 
         let outputs_result = &self.outputs.result;
 
-        quote! {
-            pub async fn #module_name<#(#declarations),*>(&mut self, #(#definitions),*) -> ethers_rs::Result<#outputs_result>
-            where #(#where_clauses,)*
-            {
-                let f = functions::#module_name::function();
-                let tokens = vec![#(#tokenize),*];
+        #[allow(unused)]
+        match self.state_mutability {
+            StateMutability::Pure | StateMutability::View => quote! {
+                pub async fn #module_name<#(#declarations),*>(&mut self, #(#definitions),*) -> ethers_rs::Result<#outputs_result>
+                where #(#where_clauses,)*
+                {
+                    let f = functions::#module_name::function();
+                    let tokens = vec![#(#tokenize),*];
 
-                let bytes = f.encode_input(&tokens).expect(INTERNAL_ERR);
+                    let bytes = f.encode_input(&tokens).expect(INTERNAL_ERR);
 
-                let bytes = self.0.eth_call(bytes).await?;
+                    let bytes = self.0.eth_call(bytes).await?;
 
-                let result = functions::#module_name::decode_output(&bytes)?;
+                    let result = functions::#module_name::decode_output(&bytes)?;
 
-                Ok(result)
-            }
+                    Ok(result)
+                }
+            },
+            StateMutability::NonPayable | StateMutability::Payable => quote! {
+                pub async fn #module_name<#(#declarations),*>(&mut self, #(#definitions),*) -> ethers_rs::Result<ethers_rs::H256>
+                where #(#where_clauses,)*
+                {
+                    let f = functions::#module_name::function();
+                    let tokens = vec![#(#tokenize),*];
+
+                    let bytes = f.encode_input(&tokens).expect(INTERNAL_ERR);
+
+                    let result = self.0.send_raw_transaction(stringify!(#module_name),Default::default(),bytes).await?;
+
+                    Ok(result)
+                }
+            },
         }
     }
 }

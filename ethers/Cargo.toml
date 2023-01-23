@@ -15,7 +15,8 @@ log = "0.4.16"
 ethers-macros-rs = {path = "../macros"}
 ethers-providers-rs = {path = "../providers"}
 ethers-types-rs = {path = "../types"}
-
+ethers-signer-rs = {path = "../signer"}
+ethers-wallet-rs = {path = "../wallet"}
 
 [dev-dependencies]
 dotenv = "0.15.0"
