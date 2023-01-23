@@ -20,7 +20,7 @@ pub trait EthereumUnit {
 macro_rules! def_eth_unit {
     ($name: ident, $decimals: literal) => {
         #[derive(Clone, Deserialize, Serialize)]
-        pub struct $name(U256);
+        pub struct $name(pub U256);
 
         impl EthereumUnit for $name {
             fn decimals() -> usize {
@@ -122,6 +122,12 @@ macro_rules! def_eth_unit {
             }
         }
 
+        impl From<$name> for U256 {
+            fn from(v: $name) -> Self {
+                v.0
+            }
+        }
+
         impl Display for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 let s: String = String::from(self.clone());
@@ -151,10 +157,16 @@ mod tests {
 
         let v = "1.1".parse::<Gwei>().expect("Parse ether");
 
+        let gwei = serde_json::to_string(&v).expect("");
+
         let v: Wei = v.unit_to();
 
-        // let expected = U256::from_dec_str("1100000000000000000").expect("Parse u256");
+        let wei = serde_json::to_string(&v).expect("");
 
-        log::debug!("{}", v);
+        assert_eq!(gwei, wei);
+
+        log::debug!("{}", gwei);
+
+        // let expected = U256::from_dec_str("1100000000000000000").expect("Parse u256");
     }
 }

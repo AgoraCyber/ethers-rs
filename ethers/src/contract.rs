@@ -31,6 +31,20 @@ impl<'a> TryFrom<&'a str> for TxOptions {
     }
 }
 
+impl TryFrom<String> for TxOptions {
+    type Error = anyhow::Error;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_str(&value)?)
+    }
+}
+
+impl TryFrom<serde_json::Value> for TxOptions {
+    type Error = anyhow::Error;
+    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
+        Ok(serde_json::from_value(value)?)
+    }
+}
+
 impl ContractContext {
     pub async fn eth_call(&mut self, call_data: Vec<u8>) -> anyhow::Result<Vec<u8>> {
         let mut provider = self.provider.clone();
@@ -142,5 +156,31 @@ impl ContractContext {
         log::debug!(target: method, "Send transaction success, {:#?}", hash);
 
         Ok(hash)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use ethers_types_rs::{Ether, Gwei};
+    use serde_json::json;
+
+    use crate::TxOptions;
+
+    #[test]
+    fn test_tx_ops() {
+        let value: Ether = "1.01".try_into().expect("");
+
+        let gas_price: Gwei = "1.01".try_into().expect("");
+
+        let ops: TxOptions = json!({
+            "gas_price":gas_price,
+            "value": value,
+        })
+        .try_into()
+        .expect("To ops");
+
+        assert_eq!(ops.gas_price, Some(gas_price.into()));
+
+        assert_eq!(ops.value, Some(value.into()));
     }
 }
