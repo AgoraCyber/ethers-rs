@@ -1,3 +1,5 @@
+use std::env;
+
 use clap::{Parser, Subcommand};
 use ethers_hardhat_rs::cmds::{HardhatForceNewProject, HardhatNewProject};
 
@@ -40,6 +42,8 @@ enum Subcommands {
 #[async_std::main]
 async fn main() {
     use colorable::*;
+
+    println!("CARGO_MANIFEST_DIR: {:?}", env::var("CARGO_MANIFEST_DIR"));
 
     match dispatch_commands().await {
         Err(err) => {

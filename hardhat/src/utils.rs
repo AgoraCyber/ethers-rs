@@ -49,7 +49,11 @@ pub fn hardhat_default_path() -> &'static PathBuf {
     static PATH: OnceCell<PathBuf> = OnceCell::new();
 
     PATH.get_or_init(|| {
-        let path: PathBuf = env::current_dir().expect("Get current_dir").into();
+        let path: PathBuf = if let Some(path) = env::var("CARGO_MANIFEST_DIR").ok() {
+            path.into()
+        } else {
+            env::current_dir().expect("Get current_dir").into()
+        };
 
         path.join("hardhat")
     })
