@@ -8,3 +8,7 @@ description = "ethers-rs subcommand for cargo"
 [dependencies]
 clap-cargo = "^0.10.0"
 clap = { version = "^4.1.1", features = ["std", "derive"] }
+ethers-hardhat-rs = { path = "../hardhat"}
+async-std = {version = "1.11.0", features = ["attributes", "default"]}
+anyhow = "1.0.68"
+colorable = "0.1.4"
