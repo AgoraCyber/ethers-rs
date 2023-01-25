@@ -37,6 +37,12 @@ impl KeyProvider for Vec<u8> {
     }
 }
 
+impl<const LEN: usize> KeyProvider for [u8; LEN] {
+    fn load(&self) -> Result<Vec<u8>> {
+        Ok(self.to_vec())
+    }
+}
+
 #[cfg(test)]
 mod tests {
 

@@ -1,4 +1,4 @@
-use ethers_types_rs::ethabi;
+use ethers_types_rs::{ethabi, H256};
 use std::fmt::Display;
 
 #[derive(Debug, thiserror::Error)]
@@ -17,6 +17,12 @@ pub enum Error {
 
     #[error("Signer accounts method empty accounts array")]
     SignerAccounts,
+
+    #[error("Execute tx return failed, {0}")]
+    TxFailure(H256),
+
+    #[error("Tx {0} return success, but contract address is null")]
+    ContractAddress(H256),
 }
 
 impl From<ethabi::Error> for Error {

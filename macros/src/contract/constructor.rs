@@ -84,10 +84,12 @@ impl Constructor {
         let recreate_inputs = &self.recreate_inputs;
 
         quote! {
-            pub async fn deploy<__C,#(#declarations),*>(client: __C,#(#definitions),*) ->  ethers_rs::Result<Self>
+            pub async fn deploy<__C,#(#declarations),*, Ops>(client: __C,#(#definitions),*, ops: Ops) ->  ethers_rs::Result<Self>
                 where
                 #(#where_clauses,)*
                 __C: Into<ethers_rs::Client>,
+                Ops: TryInto<ethers_rs::TxOptions>,
+                Ops::Error: std::error::Error + Send + Sync + 'static,
                 {
                     let code = ethers_rs::bytes::bytes_from_str(#bytecode)?;
 
@@ -101,7 +103,7 @@ impl Constructor {
 
                     let mut client = client.into();
 
-                    let address = client.deploy_contract(bytes).await?;
+                    let address = client.deploy_contract(bytes,ops.try_into()?).await?;
 
                     Self::new(address,client)
                 }

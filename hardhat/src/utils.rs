@@ -8,11 +8,14 @@ use async_process::Child;
 use async_process::Command;
 use async_process::ExitStatus;
 
+use ethers_providers_rs::providers::http;
+use ethers_providers_rs::Provider;
+use ethers_signer_rs::signer::Signer;
+use ethers_signer_rs::wallet::WalletSigner;
+use ethers_wallet_rs::{hd_wallet::bip32::DriveKey, wallet::Wallet};
 use futures::executor::block_on;
 use futures::executor::ThreadPool;
 use once_cell::sync::OnceCell;
-use serde::Deserialize;
-use serde::Serialize;
 
 use crate::error::HardhatError;
 
@@ -214,8 +217,26 @@ where
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct HardhatConfig {}
+/// Get hardhat builtin accounts
+pub fn get_hardhat_network_account(i: usize) -> Signer {
+    let drive_key = DriveKey::new(
+        "test test test test test test test test test test test junk",
+        "",
+    );
+    let key = drive_key
+        .drive(format!("m/44'/60'/0'/0/{}", i))
+        .expect("Bip32 drive key");
+
+    Wallet::new(key.private_key)
+        .expect("Create wallet")
+        .try_into_signer()
+        .expect("Create signer error")
+}
+
+/// Get hardhat default provider
+pub fn get_hardhat_network_provider() -> Provider {
+    http::connect_to("http://localhost:8545")
+}
 
 #[cfg(test)]
 mod tests {

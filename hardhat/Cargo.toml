@@ -23,6 +23,10 @@ pretty_env_logger = "0.4.0"
 
 ethabi = {path = "../parity/ethabi"}
 
+ethers-wallet-rs = { path = "../wallet"}
+ethers-providers-rs = {path = "../providers"}
+ethers-signer-rs = {path = "../signer"}
+
 [dev-dependencies]
 dotenv = "0.15.0"
 async-std = {version = "1.11.0", features = ["attributes", "default"]}

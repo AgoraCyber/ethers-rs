@@ -461,7 +461,8 @@ pub struct TransactionReceipt {
     /// To address
     pub to: Option<Address>,
     /// Contract address created by this transaction.
-    pub constract_address: Option<Address>,
+    #[serde(rename = "contractAddress")]
+    pub contract_address: Option<Address>,
     /// Gas used
     #[serde(rename = "gasUsed")]
     pub gas_used: U256,
@@ -485,6 +486,7 @@ pub struct TransactionReceipt {
     /// Logs
     pub logs: Vec<Log>,
     /// Logs bloom filter string
+    #[serde(rename = "logsBloom")]
     pub logs_bloom: BloomFilter,
     /// Only include before the Byzantium upgrade
     pub root: Option<H256>,

@@ -432,7 +432,7 @@ impl Provider {
         let tx_hash = tx_hash.try_into().map_err(jsonrpc_rs::map_error)?;
 
         self.rpc_client
-            .call("eth_getTransactionByHash", vec![tx_hash])
+            .call("eth_getTransactionReceipt", vec![tx_hash])
             .await
     }
 }

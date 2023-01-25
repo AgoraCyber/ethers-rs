@@ -74,4 +74,9 @@ impl Signer {
     pub async fn accounts(&mut self) -> RPCResult<Vec<Address>> {
         self.rpc_client.call("signer_accounts", ()).await
     }
+
+    /// Get associating signer account addresses
+    pub async fn address(&mut self) -> RPCResult<Address> {
+        self.rpc_client.call("signer_address", ()).await
+    }
 }

@@ -1,7 +1,9 @@
-use ethers_providers_rs::providers::http;
-use ethers_rs::contract;
-use ethers_signer_rs::wallet::WalletSigner;
-use ethers_wallet_rs::wallet::Wallet;
+use ethers_hardhat_rs::{
+    cmds::HardhatNetwork,
+    utils::{get_hardhat_network_account, get_hardhat_network_provider},
+};
+
+use ethers_rs::{contract, Ether, ToTxOptions};
 
 contract!(Lock, hardhat = "sol/artifacts/contracts/Lock.sol/Lock.json");
 
@@ -9,14 +11,17 @@ contract!(Lock, hardhat = "sol/artifacts/contracts/Lock.sol/Lock.json");
 async fn test_weth() {
     _ = pretty_env_logger::try_init();
 
-    let provider = http::connect_to("http://localhost:8545");
+    let mut network = HardhatNetwork::new().expect("Create hardhat network instance");
 
-    let signer = Wallet::new("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
-        .expect("Create local wallet")
-        .try_into_signer()
-        .expect("Convert local wallet into signer");
+    network.start().await.expect("Start hardhat network");
 
-    Lock::deploy((provider, signer), "0x10000000000")
+    let s0 = get_hardhat_network_account(0);
+
+    let provider = get_hardhat_network_provider();
+
+    let value = "1.1".parse::<Ether>().expect("Parse ether value");
+
+    let _ = Lock::deploy((provider, s0), "0x10000000000", value.to_tx_options())
         .await
         .expect("Deploy lock contract");
 }

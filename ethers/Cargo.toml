@@ -19,6 +19,7 @@ ethers-providers-rs = {path = "../providers"}
 ethers-types-rs = {path = "../types"}
 ethers-signer-rs = {path = "../signer"}
 ethers-wallet-rs = {path = "../wallet"}
+ethers-hardhat-rs = {path = "../hardhat"}
 
 
 

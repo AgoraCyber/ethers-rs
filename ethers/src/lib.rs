@@ -19,3 +19,5 @@ pub use error::*;
 pub type Result<T> = anyhow::Result<T>;
 
 pub use ethers_signer_rs::signer::Signer;
+
+pub use ethers_hardhat_rs as hardhat;

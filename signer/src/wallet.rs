@@ -110,6 +110,11 @@ impl WalletSigner for Wallet {
             #[allow(unused_parens)]
             server.async_handle("signer_accounts", move |()| accounts(address.clone()));
 
+            let address = Address::from_pub_key(pub_key.as_slice()).map_err(map_error)?;
+
+            #[allow(unused_parens)]
+            server.async_handle("signer_address", move |()| address_of(address.clone()));
+
             server.accept(server_transport);
 
             Ok(())
@@ -144,6 +149,11 @@ async fn sign_typed_data(wallet: Wallet, data: TypedData) -> RPCResult<Option<By
 #[allow(unused)]
 async fn accounts(address: Address) -> RPCResult<Option<Vec<Address>>> {
     Ok(Some(vec![address]))
+}
+
+#[allow(unused)]
+async fn address_of(address: Address) -> RPCResult<Option<Address>> {
+    Ok(Some(address))
 }
 
 #[allow(unused)]

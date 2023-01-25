@@ -15,6 +15,8 @@ pub trait EthereumUnit {
     fn decimals() -> usize;
 
     fn new(v: U256) -> Self;
+
+    fn to_u256(self) -> U256;
 }
 
 macro_rules! def_eth_unit {
@@ -29,6 +31,10 @@ macro_rules! def_eth_unit {
 
             fn new(v: U256) -> Self {
                 Self(v)
+            }
+
+            fn to_u256(self) -> U256 {
+                self.0
             }
         }
 

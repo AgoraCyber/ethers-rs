@@ -1,42 +1,10 @@
-use ethers_types_rs::{Address, BlockNumberOrTag, Eip55, LegacyTransactionRequest, H256, U256};
-use serde::{Deserialize, Serialize};
+use ethers_types_rs::{Address, H256};
 
-use crate::{client::Client, Error};
+use crate::{client::Client, TxOptions};
 
 pub struct ContractContext {
     pub address: Address,
     pub client: Client,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct TxOptions {
-    /// Mannul set gas price.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    gas_price: Option<U256>,
-    /// Transferring ether values.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    value: Option<U256>,
-}
-
-impl<'a> TryFrom<&'a str> for TxOptions {
-    type Error = anyhow::Error;
-    fn try_from(value: &'a str) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_str(value)?)
-    }
-}
-
-impl TryFrom<String> for TxOptions {
-    type Error = anyhow::Error;
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_str(&value)?)
-    }
-}
-
-impl TryFrom<serde_json::Value> for TxOptions {
-    type Error = anyhow::Error;
-    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
-        Ok(serde_json::from_value(value)?)
-    }
 }
 
 impl ContractContext {
@@ -57,86 +25,9 @@ impl ContractContext {
         call_data: Vec<u8>,
         ops: TxOptions,
     ) -> anyhow::Result<H256> {
-        let mut provider = self.client.provider.clone();
-
-        let mut signer = self
-            .client
-            .signer
-            .clone()
-            .ok_or(Error::InvokeMethodExpectSigner(method.to_owned()))?;
-
-        let accounts = signer.accounts().await?;
-
-        if accounts.is_empty() {
-            return Err(Error::SignerAccounts.into());
-        }
-
-        let address = accounts[0];
-
-        // Get nonce first.
-        let nonce = provider.eth_get_transaction_count(address).await?;
-
-        log::debug!(
-            target: method,
-            "Fetch account {} nonce, {:#x}",
-            address.to_checksum_string(),
-            nonce
-        );
-
-        // Get chain id
-        let chain_id = provider.eth_chain_id().await?;
-
-        log::debug!(target: method, "Fetch chain_id, {}", chain_id);
-
-        let mut tx = LegacyTransactionRequest {
-            chain_id: Some(chain_id),
-            nonce: Some(nonce),
-            to: Some(self.address.clone()),
-            data: Some(call_data.into()),
-            value: ops.value,
-            ..Default::default()
-        };
-
-        // estimate gas
-        let gas = provider
-            .eth_estimate_gas(tx.clone(), None::<BlockNumberOrTag>)
-            .await?;
-
-        log::debug!(target: method, "Fetch estimate gas, {:#x}", gas);
-
-        tx.gas = Some(gas);
-
-        // Get gas price
-
-        let gas_price = if let Some(gas_price) = ops.gas_price {
-            gas_price
-        } else {
-            provider.eth_gas_price().await?
-        };
-
-        log::debug!(target: method, "Fetch gas price, {:#x}", gas_price);
-
-        tx.gas_price = Some(gas_price);
-
-        log::debug!(
-            target: method,
-            "Try sign transaction, {}",
-            serde_json::to_string(&tx)?,
-        );
-
-        let signed_tx = signer.sign_eth_transaction(tx).await?;
-
-        log::debug!(
-            target: method,
-            "Signed transaction, {}",
-            signed_tx.to_string()
-        );
-
-        let hash = provider.eth_send_raw_transaction(signed_tx).await?;
-
-        log::debug!(target: method, "Send transaction success, {:#?}", hash);
-
-        Ok(hash)
+        self.client
+            .send_raw_transaction(method, Some(self.address.clone()), call_data, ops)
+            .await
     }
 }
 
