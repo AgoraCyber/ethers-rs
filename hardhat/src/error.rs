@@ -19,4 +19,7 @@ pub enum HardhatError {
     ProjectExists(String),
     #[error("Nodejs env not found")]
     NodejsRequired,
+
+    #[error("Cargo crate directory not found")]
+    CargoManifestDirNotFound,
 }

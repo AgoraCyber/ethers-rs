@@ -1,29 +1,21 @@
-use std::env;
-
 use clap::{Parser, Subcommand};
+use clap_verbosity_flag::Verbosity;
 use ethers_hardhat_rs::cmds::{HardhatForceNewProject, HardhatNewProject};
 
 #[derive(Debug, Parser)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    #[command(subcommand)]
-    command: Option<Commands>,
+#[command(name = "cargo")]
+#[command(bin_name = "cargo")]
+enum Cargo {
+    Ethers(Ethers),
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, clap::Args)]
 #[command(author, version, about, long_about = None)]
-enum Commands {
-    /// Cargo ethers-rs subcommand tools
-    Ethers {
-        #[command(subcommand)]
-        command: Option<Subcommands>,
-        #[command(flatten)]
-        manifest: clap_cargo::Manifest,
-        #[command(flatten)]
-        workspace: clap_cargo::Workspace,
-        #[command(flatten)]
-        features: clap_cargo::Features,
-    },
+struct Ethers {
+    #[command(subcommand)]
+    command: Option<Subcommands>,
+    #[command(flatten)]
+    verbose: Verbosity,
 }
 
 #[derive(Debug, Subcommand)]
@@ -43,7 +35,7 @@ enum Subcommands {
 async fn main() {
     use colorable::*;
 
-    println!("CARGO_MANIFEST_DIR: {:?}", env::var("CARGO_MANIFEST_DIR"));
+    // pretty_env_logger::init();
 
     match dispatch_commands().await {
         Err(err) => {
@@ -54,14 +46,16 @@ async fn main() {
 }
 
 async fn dispatch_commands() -> anyhow::Result<()> {
-    let args = Cli::parse();
+    let Cargo::Ethers(ethers) = Cargo::parse();
 
-    if let Some(Commands::Ethers { command, .. }) = args.command {
-        if let Some(command) = command {
-            match command {
-                Subcommands::Init { force, path } => {
-                    exec_new_project(force, path).await?;
-                }
+    env_logger::Builder::new()
+        .filter_level(ethers.verbose.log_level_filter())
+        .init();
+
+    if let Some(command) = ethers.command {
+        match command {
+            Subcommands::Init { force, path } => {
+                exec_new_project(force, path).await?;
             }
         }
     }

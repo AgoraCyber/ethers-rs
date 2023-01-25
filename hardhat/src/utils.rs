@@ -1,4 +1,5 @@
 use std::env;
+use std::fs::canonicalize;
 use std::io::ErrorKind;
 use std::marker::PhantomData;
 use std::path::PathBuf;
@@ -10,6 +11,8 @@ use async_process::ExitStatus;
 use futures::executor::block_on;
 use futures::executor::ThreadPool;
 use once_cell::sync::OnceCell;
+use serde::Deserialize;
+use serde::Serialize;
 
 use crate::error::HardhatError;
 
@@ -43,20 +46,42 @@ pub fn thread_pool() -> &'static ThreadPool {
 
     POOLS.get_or_init(|| ThreadPool::new().unwrap())
 }
+/// Find the nearest cargo manifest dir.
+pub fn find_manifest_dir() -> anyhow::Result<PathBuf> {
+    let start_dir = env::current_dir()?;
+
+    fn search(start_dir: PathBuf) -> anyhow::Result<PathBuf> {
+        log::trace!(target:"HARDHAT","Search manifest file in {}",start_dir.to_string_lossy());
+
+        for item in start_dir.read_dir()? {
+            if let Ok(item) = item {
+                if item.path().is_dir() {
+                    continue;
+                }
+
+                if item.file_name() == "Cargo.toml" {
+                    let path = canonicalize(start_dir)?;
+
+                    log::trace!(target:"HARDHAT","found cargo manifest dir, {}",path.to_string_lossy());
+
+                    return Ok(path);
+                }
+            }
+        }
+
+        if let Some(parent) = start_dir.parent() {
+            return search(parent.to_path_buf());
+        }
+
+        Err(HardhatError::CargoManifestDirNotFound.into())
+    }
+
+    search(start_dir)
+}
 
 /// Returns the hardhat project default path `$CARGO_MANIFEST_DIR/hardhat`
-pub fn hardhat_default_path() -> &'static PathBuf {
-    static PATH: OnceCell<PathBuf> = OnceCell::new();
-
-    PATH.get_or_init(|| {
-        let path: PathBuf = if let Some(path) = env::var("CARGO_MANIFEST_DIR").ok() {
-            path.into()
-        } else {
-            env::current_dir().expect("Get current_dir").into()
-        };
-
-        path.join("hardhat")
-    })
+pub fn hardhat_default_path() -> anyhow::Result<PathBuf> {
+    find_manifest_dir().map(|p| p.join("sol"))
 }
 
 #[async_trait::async_trait]
@@ -95,7 +120,7 @@ where
     C: HardhatCommandContext,
 {
     pub fn new() -> anyhow::Result<Self> {
-        Self::new_with(hardhat_default_path())
+        Self::new_with(hardhat_default_path()?)
     }
     /// Create new hardhat network instance with hardhat project root path.
     pub fn new_with<P>(hardhat_root: P) -> anyhow::Result<Self>
@@ -189,28 +214,18 @@ where
     }
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct HardhatConfig {}
+
 #[cfg(test)]
 mod tests {
-    use std::fs::{create_dir, remove_dir_all};
 
-    use std::path::PathBuf;
+    use super::find_manifest_dir;
 
-    use super::{hardhat_command, hardhat_default_path};
+    #[test]
+    fn test_manifest_dir() {
+        _ = pretty_env_logger::try_init();
 
-    #[async_std::test]
-    async fn start_new_project() {
-        let path: PathBuf = hardhat_default_path().clone();
-        if path.exists() {
-            remove_dir_all(path.clone()).expect("Remove exists path");
-        }
-
-        create_dir(path.clone()).expect("Create hardhat dir");
-
-        let mut command = hardhat_command(path)
-            .expect("Start hardhat command with current dir $CARGO_MANIFEST_DIR");
-
-        let mut child = command.spawn().expect("Start npx hardhat");
-
-        child.status().await.expect("Wait child process exit.");
+        log::debug!("{:?}", find_manifest_dir().expect("find manifest dir"));
     }
 }

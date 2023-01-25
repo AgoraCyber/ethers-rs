@@ -66,6 +66,11 @@ impl HardhatCommandContext for NewProjectContext {
         if hardhat_root.exists() {
             Err(HardhatError::ProjectExists(hardhat_root.to_string_lossy().into_owned()).into())
         } else {
+            log::debug!(
+                "create hardhat project root dir,{}",
+                hardhat_root.to_string_lossy()
+            );
+
             create_dir_all(hardhat_root)?;
 
             Ok(())
