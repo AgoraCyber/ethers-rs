@@ -2,6 +2,7 @@ use super::utils::*;
 use heck::{ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
+use ethers_hardhat_rs::ethabi;
 
 /// Structure used to generate contract's event interface.
 pub struct Event {

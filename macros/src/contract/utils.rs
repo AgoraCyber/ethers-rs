@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use ethers_hardhat_rs::ethabi;
+
 use ethabi::{Param, ParamType};
 use heck::ToSnakeCase;
 use proc_macro2::{Span, TokenStream};

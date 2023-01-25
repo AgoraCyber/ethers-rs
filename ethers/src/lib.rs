@@ -3,6 +3,9 @@ pub use ethers_macros_rs::*;
 
 pub mod contract;
 
+pub mod client;
+pub use client::*;
+
 pub use ethers_types_rs::ethabi;
 
 pub use ethers_types_rs::*;

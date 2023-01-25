@@ -1,17 +1,11 @@
-use ethers_providers_rs::Provider;
-use ethers_signer_rs::signer::Signer;
-use ethers_types_rs::{
-    Address, BlockNumberOrTag, Bytecode, Eip55, LegacyTransactionRequest, H256, U256,
-};
+use ethers_types_rs::{Address, BlockNumberOrTag, Eip55, LegacyTransactionRequest, H256, U256};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 
-use crate::Error;
+use crate::{client::Client, Error};
 
 pub struct ContractContext {
     pub address: Address,
-    pub provider: Provider,
-    pub signer: Option<Signer>,
+    pub client: Client,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
@@ -47,21 +41,7 @@ impl TryFrom<serde_json::Value> for TxOptions {
 
 impl ContractContext {
     pub async fn eth_call(&mut self, call_data: Vec<u8>) -> anyhow::Result<Vec<u8>> {
-        let mut provider = self.provider.clone();
-
-        let call_data: Bytecode = call_data.into();
-
-        let address = self.address.to_checksum_string();
-
-        let tx: LegacyTransactionRequest = json!({
-            "to": address,
-            "data":call_data,
-        })
-        .try_into()?;
-
-        let result = provider.eth_call(tx, None::<BlockNumberOrTag>).await?;
-
-        Ok(result.0)
+        self.client.eth_call(self.address, call_data).await
     }
 
     /// Send raw transaction to contract address.
@@ -77,9 +57,10 @@ impl ContractContext {
         call_data: Vec<u8>,
         ops: TxOptions,
     ) -> anyhow::Result<H256> {
-        let mut provider = self.provider.clone();
+        let mut provider = self.client.provider.clone();
 
         let mut signer = self
+            .client
             .signer
             .clone()
             .ok_or(Error::InvokeMethodExpectSigner(method.to_owned()))?;

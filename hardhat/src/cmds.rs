@@ -3,8 +3,8 @@ use std::{
     path::PathBuf,
 };
 
-use async_process::{Child, Command, Stdio};
-use futures::{io::BufReader, task::SpawnExt, AsyncBufReadExt, TryStreamExt};
+use async_process::{Child, Command, ExitStatus, Stdio};
+use futures::{executor::block_on, io::BufReader, task::SpawnExt, AsyncBufReadExt, TryStreamExt};
 
 use crate::{
     error::HardhatError,
@@ -102,6 +102,37 @@ impl HardhatCommandContext for ForceNewProjectContext {
 
 /// Command for creating new hardhat project .
 pub type HardhatForceNewProject = HardhatCommand<ForceNewProjectContext>;
+
+#[derive(Debug)]
+pub struct BuildProjectContext;
+
+#[async_trait::async_trait]
+impl HardhatCommandContext for BuildProjectContext {
+    fn init_command(hardhat_root: PathBuf, c: &mut Command) -> anyhow::Result<()> {
+        log::debug!(
+            "try build hardhat project {}",
+            hardhat_root.to_string_lossy()
+        );
+
+        c.arg("compile");
+
+        Ok(())
+    }
+}
+
+/// Command for creating new hardhat project .
+pub type HardhatBuildProject = HardhatCommand<BuildProjectContext>;
+
+/// Helper fn to block run [`HardhatBuildProject`] command
+pub fn block_run_build() -> anyhow::Result<ExitStatus> {
+    block_on(async {
+        let mut command = HardhatBuildProject::new()?;
+
+        command.start().await?;
+
+        Ok(command.status().await?)
+    })
+}
 
 #[cfg(test)]
 mod tests {

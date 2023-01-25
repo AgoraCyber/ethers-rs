@@ -1,7 +1,7 @@
-use crate::gen::CodeGen;
-
 use super::utils::*;
+use crate::gen::CodeGen;
 use ethabi::StateMutability;
+use ethers_hardhat_rs::ethabi;
 use heck::ToSnakeCase;
 use proc_macro2::Span;
 use proc_macro2::TokenStream;

@@ -10,11 +10,12 @@
 
 use std::{env, fs, path::PathBuf};
 
+use ethers_hardhat_rs::ethabi;
 use heck::{ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{Ident, TokenStream};
 use quote::{format_ident, quote};
 use syn::parse::Parse;
-use syn::{ItemStruct, LitStr, Token};
+use syn::{LitStr, Token};
 
 use crate::error::ToSynError;
 use crate::gen::CodeGen;
@@ -47,6 +48,7 @@ pub struct Contract {
     constructor: Option<constructor::Constructor>,
     functions: Vec<function::Function>,
     events: Vec<event::Event>,
+    bytecode: Option<String>,
 }
 
 impl Parse for Contract {
@@ -67,13 +69,27 @@ impl Parse for Contract {
                 Self::new_with_contract(
                     ident,
                     ethabi::Contract::load(source_file).map_syn_error(path_or_data.span())?,
+                    None,
                 )
             }
             "data" => Self::new_with_contract(
                 ident,
                 ethabi::Contract::load(path_or_data.value().as_bytes())
                     .map_syn_error(path_or_data.span())?,
+                None,
             ),
+            "hardhat" => {
+                let path = normalize_path(path_or_data.clone())?;
+
+                let source_file = fs::File::open(path).map_err(|e| {
+                    syn::Error::new(path_or_data.span(), format!("load abi file failed, {}", e))
+                })?;
+
+                let artifact = ethabi::HardhatArtifact::load(source_file)
+                    .map_syn_error(path_or_data.span())?;
+
+                Self::new_with_contract(ident, artifact.abi, Some(artifact.bytecode))
+            }
             _ => Err(syn::Error::new(
                 source.span(),
                 "invalid source, expect file/data",
@@ -83,59 +99,17 @@ impl Parse for Contract {
 }
 
 impl Contract {
-    #[allow(unused)]
-    pub fn new(item: ItemStruct) -> syn::Result<Contract> {
-        let mut contract = None;
-
-        for attr in &item.attrs {
-            if let Some(path) = attr.path.get_ident() {
-                let name = path.to_string();
-                match name.as_str() {
-                    "abi_file" => {
-                        let abi_file: LitStr = attr.parse_args()?;
-
-                        let path = normalize_path(abi_file.clone())?;
-
-                        eprintln!("abi file, {:?}", path);
-
-                        let source_file = fs::File::open(path).map_err(|e| {
-                            syn::Error::new_spanned(attr, format!("load abi file failed, {}", e))
-                        })?;
-
-                        contract = Some(
-                            ethabi::Contract::load(source_file).map_syn_error(abi_file.span())?,
-                        );
-                    }
-                    "abi" => {
-                        let abi_data = attr.parse_args::<LitStr>()?;
-
-                        contract = Some(
-                            ethabi::Contract::load(abi_data.value().as_bytes())
-                                .map_syn_error(abi_data.span())?,
-                        );
-                    }
-                    _ => {
-                        continue;
-                    }
-                };
-            }
-        }
-
-        #[allow(unused)]
-        let contract = contract.ok_or(syn::Error::new(
-            item.ident.span(),
-            r#"Use #[abi_file("xx")]/#[abi("xxx")] to specify abi data"#,
-        ))?;
-
-        Self::new_with_contract(item.ident.clone(), contract)
-    }
-
-    pub fn new_with_contract(ident: Ident, contract: ethabi::Contract) -> syn::Result<Self> {
+    pub fn new_with_contract(
+        ident: Ident,
+        contract: ethabi::Contract,
+        bytecode: Option<String>,
+    ) -> syn::Result<Self> {
         Ok(Self {
             ident,
             constructor: contract.constructor.as_ref().map(Into::into),
             functions: contract.functions().map(Into::into).collect(),
             events: contract.events().map(Into::into).collect(),
+            bytecode,
         })
     }
 }
@@ -163,6 +137,12 @@ impl CodeGen for Contract {
             span = self.ident.span(),
         );
 
+        let deploy_fn = if let Some(bytecode) = self.bytecode.clone() {
+            self.constructor.as_ref().map(|c| c.gen_deploy_fn(bytecode))
+        } else {
+            None
+        };
+
         quote! {
             pub type #contract_struture_ident = #mod_name::#contract_struture_ident;
 
@@ -181,14 +161,18 @@ impl CodeGen for Contract {
                 pub struct #contract_struture_ident(ethers_rs::ContractContext);
 
                 impl #contract_struture_ident {
-                    pub fn new<A>(address: A, provider: ethers_rs::Provider) ->  ethers_rs::Result<Self>
+
+                    #deploy_fn
+
+                    pub fn new<A,C>(address: A, client: C) ->  ethers_rs::Result<Self>
                     where
                     A: TryInto<ethers_rs::Address>,
                     A::Error: std::fmt::Display + std::fmt::Debug,
+                    C: Into<ethers_rs::Client>,
                     {
                         let address = address.try_into().map_err(ethers_rs::custom_error)?;
 
-                        Ok(Self(ContractContext{address, provider, signer: None}))
+                        Ok(Self(ContractContext{address, client: client.into() }))
                     }
 
                     pub fn connect<A>(&self, address: A) -> ethers_rs::Result<Self>
@@ -200,24 +184,27 @@ impl CodeGen for Contract {
 
                         Ok(Self(ContractContext{
                             address,
-                            provider: self.0.provider.clone(),
-                            signer: self.0.signer.clone()
+                            client: self.0.client.clone(),
                         }))
                     }
 
                     pub fn with_provider(&self, provider: ethers_rs::Provider) -> Self {
                         Self(ContractContext{
                             address: self.0.address.clone(),
-                            provider,
-                            signer: self.0.signer.clone()
+                            client: ethers_rs::Client {
+                                provider,
+                                signer: self.0.client.signer.clone()
+                            },
                         })
                     }
 
                     pub fn with_signer(&self, signer: ethers_rs::Signer) -> Self {
                         Self(ContractContext{
                             address: self.0.address.clone(),
-                            provider: self.0.provider.clone(),
-                            signer: Some(signer)
+                            client: ethers_rs::Client {
+                                provider: self.0.client.provider.clone(),
+                                signer: Some(signer),
+                            },
                         })
                     }
 

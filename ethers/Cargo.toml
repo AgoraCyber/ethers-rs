@@ -20,8 +20,15 @@ ethers-types-rs = {path = "../types"}
 ethers-signer-rs = {path = "../signer"}
 ethers-wallet-rs = {path = "../wallet"}
 
+
+
+
 [dev-dependencies]
 dotenv = "0.15.0"
 pretty_env_logger = "0.4.0"
 async-std = {version = "1.11.0", features = ["attributes", "default"]}
 criterion = {version = "0.4", features = ["async_futures", "html_reports"]}
+
+
+[build-dependencies]
+ethers-hardhat-rs = { path = "../hardhat"}
