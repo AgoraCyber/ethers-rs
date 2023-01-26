@@ -157,6 +157,7 @@ impl Poller {
             for event in process_events {
                 match event {
                     EventType::Transaction(tx_hash) => {
+                        log::debug!("Check tx status {}", tx_hash);
                         match self.provider.eth_get_transaction_receipt(tx_hash).await {
                             Ok(Some(receipt)) => {
                                 log::trace!(
@@ -169,7 +170,7 @@ impl Poller {
                                     .complete_one(event, EventArg::Transaction(receipt));
                             }
                             Ok(None) => {
-                                log::error!("Get tx receipt return None");
+                                log::trace!("Get tx receipt return None");
                                 reserved.push(event);
                             }
                             Err(err) => {

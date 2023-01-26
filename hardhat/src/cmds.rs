@@ -46,7 +46,7 @@ impl HardhatCommandContext for NetworkContext {
 
         thread_pool().spawn(async move {
             while let Some(line) = lines.try_next().await.expect("") {
-                log::debug!(target:"hardhat node" ,"{}", line);
+                log::trace!(target:"hardhat node" ,"{}", line);
             }
         })?;
 
