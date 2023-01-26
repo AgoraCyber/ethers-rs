@@ -7,20 +7,22 @@ use ethers_types_rs::{
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::Error;
+use crate::{events::EventEmitter, Error};
 
 /// The client to access ether blockchain functions.
 #[derive(Clone)]
 pub struct Client {
     pub provider: Provider,
     pub signer: Option<Signer>,
+    pub event_emitter: EventEmitter,
 }
 
 impl From<Provider> for Client {
     fn from(value: Provider) -> Self {
         Client {
-            provider: value,
+            provider: value.clone(),
             signer: None,
+            event_emitter: EventEmitter::new(value),
         }
     }
 }
@@ -28,8 +30,9 @@ impl From<Provider> for Client {
 impl From<(Provider, Signer)> for Client {
     fn from(value: (Provider, Signer)) -> Self {
         Client {
-            provider: value.0,
+            provider: value.0.clone(),
             signer: Some(value.1),
+            event_emitter: EventEmitter::new(value.0),
         }
     }
 }
@@ -60,28 +63,20 @@ impl Client {
             .send_raw_transaction("deploy", None, call_data, ops)
             .await?;
 
-        let mut provider = self.provider.clone();
+        let receipt = self.event_emitter.wait_transaction(tx_hash).wait().await?;
 
-        let receipt = provider
-            .eth_get_transaction_receipt(tx_hash.clone())
-            .await?;
+        let status = receipt.status.ok_or(Error::TxFailure(tx_hash))?;
 
-        if let Some(receipt) = receipt {
-            if let Some(status) = receipt.status {
-                match status {
-                    Status::Success => {
-                        if let Some(contract_address) = receipt.contract_address {
-                            return Ok(contract_address);
-                        } else {
-                            return Err(Error::ContractAddress(tx_hash).into());
-                        }
-                    }
-                    Status::Failure => return Err(Error::TxFailure(tx_hash).into()),
+        match status {
+            Status::Success => {
+                if let Some(contract_address) = receipt.contract_address {
+                    return Ok(contract_address);
+                } else {
+                    return Err(Error::ContractAddress(tx_hash).into());
                 }
             }
+            Status::Failure => return Err(Error::TxFailure(tx_hash).into()),
         }
-
-        unimplemented!("Impl tx completed event")
     }
 
     /// Send raw transaction to contract address.

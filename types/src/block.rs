@@ -269,34 +269,34 @@ impl<'a> TryFrom<&'a str> for BlockNumberOrTag {
 pub struct FeeHistory {
     /// The lowest number block of returned range.
     #[serde(rename = "oldestBlock")]
-    oldest_block: U256,
+    pub oldest_block: U256,
     #[serde(rename = "baseFeePerGas")]
-    base_fee_per_gas: Vec<U256>,
+    pub base_fee_per_gas: Vec<U256>,
 
-    reward: Vec<Vec<U256>>,
+    pub reward: Vec<Vec<U256>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Filter {
     /// The lowest number block of returned range.
     #[serde(rename = "fromBlock")]
-    from_block: Option<U256>,
+    pub from_block: Option<U256>,
     #[serde(rename = "toBlock")]
-    to_block: Option<U256>,
+    pub to_block: Option<U256>,
 
-    address: Option<FilterAddress>,
+    pub address: Option<FilterAddress>,
 
-    topics: Option<FilterTopic>,
+    pub topics: Option<FilterTopic>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(untagged)]
 pub enum FilterAddress {
     Address(Address),
     Addresses(Vec<Address>),
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(untagged)]
 pub enum FilterTopic {
     Signle(U256),

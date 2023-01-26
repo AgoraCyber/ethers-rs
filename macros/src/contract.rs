@@ -194,23 +194,30 @@ impl CodeGen for Contract {
                     }
 
                     pub fn with_provider(&self, provider: ethers_rs::Provider) -> Self {
+                        let mut client = self.0.client.clone();
+
+                        client.provider = provider;
+
                         Self(ContractContext{
                             address: self.0.address.clone(),
-                            client: ethers_rs::Client {
-                                provider,
-                                signer: self.0.client.signer.clone()
-                            },
+                            client,
                         })
                     }
 
                     pub fn with_signer(&self, signer: ethers_rs::Signer) -> Self {
+
+                        let mut client = self.0.client.clone();
+
+                        client.signer = Some(signer);
+
                         Self(ContractContext{
                             address: self.0.address.clone(),
-                            client: ethers_rs::Client {
-                                provider: self.0.client.provider.clone(),
-                                signer: Some(signer),
-                            },
+                            client,
                         })
+                    }
+
+                    pub fn address(&self) -> ethers_rs::Address {
+                        self.0.address.clone()
                     }
 
                     #(#instance_functions)*

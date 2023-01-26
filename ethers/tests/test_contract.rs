@@ -5,6 +5,7 @@ use ethers_hardhat_rs::{
 
 use ethers_rs::{contract, Ether, ToTxOptions};
 
+// It is not necessary to specify hardhat artifacts path
 contract!(Lock);
 
 #[async_std::test]
@@ -21,7 +22,9 @@ async fn test_deploy() {
 
     let value = "1.1".parse::<Ether>().expect("Parse payment eth value");
 
-    let _ = Lock::deploy((provider, s0), "0x10000000000", value.to_tx_options())
+    let lock = Lock::deploy((provider, s0), "0x10000000000", value.to_tx_options())
         .await
         .expect("Deploy lock contract");
+
+    log::debug!("deploy lock success, {}", lock.address());
 }
