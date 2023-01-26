@@ -12,7 +12,7 @@ use std::{env, fs, path::PathBuf};
 
 use ethers_hardhat_rs::ethabi;
 use heck::{ToSnakeCase, ToUpperCamelCase};
-use proc_macro2::{Ident, TokenStream};
+use proc_macro2::{Ident, Span, TokenStream};
 use quote::{format_ident, quote};
 use syn::parse::Parse;
 use syn::{LitStr, Token};
@@ -25,19 +25,18 @@ mod event;
 mod function;
 mod utils;
 
-fn normalize_path(relative_path: LitStr) -> syn::Result<PathBuf> {
-    // workaround for https://github.com/rust-lang/rust/issues/43860
+fn normalize_path<P>(span: Span, relative_path: P) -> syn::Result<PathBuf>
+where
+    P: Into<PathBuf>,
+{
+    let relative_path = relative_path.into();
 
-    let cargo_toml_directory = env::var("CARGO_MANIFEST_DIR").map_err(|e| {
-        syn::Error::new_spanned(
-            relative_path.clone(),
-            format!("load abi file failed, {}", e),
-        )
-    })?;
+    let cargo_toml_directory = env::var("CARGO_MANIFEST_DIR")
+        .map_err(|e| syn::Error::new(span, format!("load abi file failed, {}", e)))?;
 
     let mut path: PathBuf = cargo_toml_directory.into();
 
-    path.push(relative_path.value());
+    path.push(relative_path);
 
     Ok(path)
 }
@@ -54,46 +53,52 @@ pub struct Contract {
 impl Parse for Contract {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         let ident: Ident = input.parse()?;
-        let _: Token!(,) = input.parse()?;
-        let source: Ident = input.parse()?;
-        let _: Token!(=) = input.parse()?;
-        let path_or_data: LitStr = input.parse()?;
-        match source.to_string().as_str() {
-            "file" => {
-                let path = normalize_path(path_or_data.clone())?;
+        let rhs: Option<Token!(,)> = input.parse()?;
 
-                let source_file = fs::File::open(path).map_err(|e| {
-                    syn::Error::new(path_or_data.span(), format!("load abi file failed, {}", e))
-                })?;
+        if rhs.is_some() {
+            let source: Ident = input.parse()?;
+            let _: Token!(=) = input.parse()?;
+            let path_or_data: LitStr = input.parse()?;
 
-                Self::new_with_contract(
+            match source.to_string().as_str() {
+                "file" => {
+                    let path = normalize_path(path_or_data.span(), path_or_data.clone().value())?;
+
+                    let source_file = fs::File::open(path).map_err(|e| {
+                        syn::Error::new(path_or_data.span(), format!("load abi file failed, {}", e))
+                    })?;
+
+                    Self::new_with_contract(
+                        ident,
+                        ethabi::Contract::load(source_file).map_syn_error(path_or_data.span())?,
+                        None,
+                    )
+                }
+                "data" => Self::new_with_contract(
                     ident,
-                    ethabi::Contract::load(source_file).map_syn_error(path_or_data.span())?,
+                    ethabi::Contract::load(path_or_data.value().as_bytes())
+                        .map_syn_error(path_or_data.span())?,
                     None,
-                )
+                ),
+                _ => Err(syn::Error::new(
+                    source.span(),
+                    "invalid source, expect file/data",
+                )),
             }
-            "data" => Self::new_with_contract(
-                ident,
-                ethabi::Contract::load(path_or_data.value().as_bytes())
-                    .map_syn_error(path_or_data.span())?,
-                None,
-            ),
-            "hardhat" => {
-                let path = normalize_path(path_or_data.clone())?;
+        } else {
+            let path: PathBuf =
+                format!("sol/artifacts/contracts/{}.sol/{}.json", ident, ident).into();
 
-                let source_file = fs::File::open(path).map_err(|e| {
-                    syn::Error::new(path_or_data.span(), format!("load abi file failed, {}", e))
-                })?;
+            let path = normalize_path(ident.span(), path)?;
 
-                let artifact = ethabi::HardhatArtifact::load(source_file)
-                    .map_syn_error(path_or_data.span())?;
+            let source_file = fs::File::open(path).map_err(|e| {
+                syn::Error::new(ident.span(), format!("load abi file failed, {}", e))
+            })?;
 
-                Self::new_with_contract(ident, artifact.abi, Some(artifact.bytecode))
-            }
-            _ => Err(syn::Error::new(
-                source.span(),
-                "invalid source, expect file/data",
-            )),
+            let artifact =
+                ethabi::HardhatArtifact::load(source_file).map_syn_error(ident.span())?;
+
+            Self::new_with_contract(ident, artifact.abi, Some(artifact.bytecode))
         }
     }
 }

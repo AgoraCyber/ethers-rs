@@ -5,10 +5,10 @@ use ethers_hardhat_rs::{
 
 use ethers_rs::{contract, Ether, ToTxOptions};
 
-contract!(Lock, hardhat = "sol/artifacts/contracts/Lock.sol/Lock.json");
+contract!(Lock);
 
 #[async_std::test]
-async fn test_weth() {
+async fn test_deploy() {
     _ = pretty_env_logger::try_init();
 
     let mut network = HardhatNetwork::new().expect("Create hardhat network instance");
@@ -19,7 +19,7 @@ async fn test_weth() {
 
     let provider = get_hardhat_network_provider();
 
-    let value = "1.1".parse::<Ether>().expect("Parse ether value");
+    let value = "1.1".parse::<Ether>().expect("Parse payment eth value");
 
     let _ = Lock::deploy((provider, s0), "0x10000000000", value.to_tx_options())
         .await
