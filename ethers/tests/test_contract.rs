@@ -3,7 +3,7 @@ use ethers_hardhat_rs::{
     utils::{get_hardhat_network_account, get_hardhat_network_provider},
 };
 
-use ethers_rs::{contract, Ether, ToTxOptions};
+use ethers_rs::{contract, Client, Ether, ToTxOptions};
 
 // It is not necessary to specify hardhat artifacts path
 contract!(Lock);
@@ -22,9 +22,31 @@ async fn test_deploy() {
 
     let value = "1.1".parse::<Ether>().expect("Parse payment eth value");
 
-    let lock = Lock::deploy((provider, s0), "0x10000000000", value.to_tx_options())
+    let mut client: Client = (provider, s0).into();
+
+    let mut lock = Lock::deploy(client.clone(), value.clone().to_tx_options())
         .await
         .expect("Deploy lock contract");
 
     log::debug!("deploy lock success, {}", lock.address());
+
+    let balance = client.balance().await.expect("Get balance");
+
+    let mut tx = lock.withdraw().await.expect("Try withdraw");
+
+    let receipt = tx.wait().await.expect("Wait withdraw tx mint");
+
+    log::debug!(
+        "receipt {}",
+        serde_json::to_string_pretty(&receipt).expect("")
+    );
+
+    let balance_after = client.balance().await.expect("Get after deploy balance");
+
+    log::debug!("{} {}", Ether(balance), Ether(balance_after));
+
+    assert_eq!(
+        balance + value - receipt.gas_used * receipt.effective_gas_price,
+        balance_after
+    );
 }

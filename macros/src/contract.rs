@@ -163,7 +163,7 @@ impl CodeGen for Contract {
                 use ethers_rs::Address;
 
                 /// Solidity contract rust mapping type
-                pub struct #contract_struture_ident(ethers_rs::ContractContext);
+                pub struct #contract_struture_ident(pub ethers_rs::ContractContext);
 
                 impl #contract_struture_ident {
 

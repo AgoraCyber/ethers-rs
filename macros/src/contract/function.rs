@@ -219,7 +219,7 @@ impl Function {
                 }
             },
             StateMutability::NonPayable => quote! {
-                pub async fn #module_name<#(#declarations),*>(&mut self, #(#definitions),*) -> ethers_rs::Result<ethers_rs::H256>
+                pub async fn #module_name<#(#declarations),*>(&mut self, #(#definitions),*) -> ethers_rs::Result<ethers_rs::TransactionWaitable<ethers_rs::Timeout>>
                 where #(#where_clauses,)*
                 {
                     let f = functions::#module_name::function();
@@ -227,13 +227,13 @@ impl Function {
 
                     let bytes = f.encode_input(&tokens).expect(INTERNAL_ERR);
 
-                    let result = self.0.send_raw_transaction(stringify!(#module_name), bytes, Default::default()).await?;
+                    let tx_hash = self.0.send_raw_transaction(stringify!(#module_name), bytes, Default::default()).await?;
 
-                    Ok(result)
+                    Ok(self.0.client.event_emitter.wait_transaction(tx_hash))
                 }
             },
             StateMutability::Payable => quote! {
-                pub async fn #module_name<#(#declarations),*, Ops>(&mut self, #(#definitions,)* ops: Ops) -> ethers_rs::Result<ethers_rs::H256>
+                pub async fn #module_name<#(#declarations),*, Ops>(&mut self, #(#definitions,)* ops: Ops) -> ethers_rs::Result<ethers_rs::TransactionWaitable<ethers_rs::Timeout>>
                 where
                 #(#where_clauses,)*
                 Ops: TryInto<ethers_rs::TxOptions>,
@@ -246,9 +246,9 @@ impl Function {
 
                     let bytes = f.encode_input(&tokens).expect(INTERNAL_ERR);
 
-                    let result = self.0.send_raw_transaction(stringify!(#module_name), bytes, ops).await?;
+                    let tx_hash = self.0.send_raw_transaction(stringify!(#module_name), bytes, ops).await?;
 
-                    Ok(result)
+                    Ok(self.0.client.event_emitter.wait_transaction(tx_hash))
                 }
             },
         }

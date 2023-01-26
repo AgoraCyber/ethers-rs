@@ -38,6 +38,23 @@ impl From<(Provider, Signer)> for Client {
 }
 
 impl Client {
+    /// Check if client is a signer .
+    pub fn is_signer(&self) -> bool {
+        self.signer.is_some()
+    }
+
+    /// Get signer balance
+    pub async fn balance(&mut self) -> anyhow::Result<U256> {
+        let mut signer = self
+            .signer
+            .clone()
+            .ok_or(Error::InvokeMethodExpectSigner("balance".to_owned()))?;
+
+        let address = signer.address().await?;
+
+        Ok(self.provider.eth_get_balance(address).await?)
+    }
+
     pub async fn eth_call(&mut self, to: Address, call_data: Vec<u8>) -> anyhow::Result<Vec<u8>> {
         let mut provider = self.provider.clone();
 

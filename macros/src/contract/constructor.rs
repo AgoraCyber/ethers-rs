@@ -84,7 +84,7 @@ impl Constructor {
         let recreate_inputs = &self.recreate_inputs;
 
         quote! {
-            pub async fn deploy<__C,#(#declarations),*, Ops>(client: __C,#(#definitions),*, ops: Ops) ->  ethers_rs::Result<Self>
+            pub async fn deploy<__C,#(#declarations),* Ops>(client: __C,#(#definitions),* ops: Ops) ->  ethers_rs::Result<Self>
                 where
                 #(#where_clauses,)*
                 __C: Into<ethers_rs::Client>,
