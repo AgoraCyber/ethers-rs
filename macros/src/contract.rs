@@ -61,18 +61,17 @@ impl Parse for Contract {
             let path_or_data: LitStr = input.parse()?;
 
             match source.to_string().as_str() {
-                "file" => {
+                "hardhat" => {
                     let path = normalize_path(path_or_data.span(), path_or_data.clone().value())?;
 
                     let source_file = fs::File::open(path).map_err(|e| {
                         syn::Error::new(path_or_data.span(), format!("load abi file failed, {}", e))
                     })?;
 
-                    Self::new_with_contract(
-                        ident,
-                        ethabi::Contract::load(source_file).map_syn_error(path_or_data.span())?,
-                        None,
-                    )
+                    let artifact =
+                        ethabi::HardhatArtifact::load(source_file).map_syn_error(ident.span())?;
+
+                    Self::new_with_contract(ident, artifact.abi, Some(artifact.bytecode))
                 }
                 "data" => Self::new_with_contract(
                     ident,

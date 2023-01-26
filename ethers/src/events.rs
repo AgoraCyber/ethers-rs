@@ -9,7 +9,7 @@ use async_timer_rs::{hashed::Timeout, Timer};
 use completeq_rs::{channel, oneshot, user_event::UserEvent};
 use ethers_hardhat_rs::futures::{executor::ThreadPool, task::SpawnExt};
 use ethers_providers_rs::Provider;
-use ethers_types_rs::{Filter, PollLogs, TransactionReceipt, H256};
+use ethers_types_rs::{Filter, PollLogs, TransactionReceipt, H256, U256};
 use once_cell::sync::OnceCell;
 
 /// Ether client support event types
@@ -104,10 +104,23 @@ impl EventEmitter {
             receiver: Some(self.onshot.wait_for(EventType::Transaction(tx))),
         }
     }
+
+    /// Add event filter listener
+    pub fn event_filter(&mut self, filter: Filter) -> EventReceiver<Timeout> {
+        let event_type = EventType::Log(filter.clone());
+
+        self.events.lock().unwrap().push(event_type.clone());
+
+        EventReceiver {
+            filter,
+            receiver: self.channel.wait_for(event_type, 20),
+        }
+    }
 }
 
 #[allow(unused)]
 struct Poller {
+    last_execute_block_number: Option<U256>,
     duration_onchain: bool,
     duration: Arc<Mutex<Duration>>,
     onshot: OnshotCompleteQ,
@@ -125,6 +138,7 @@ impl Poller {
         events: Arc<Mutex<Vec<EventType>>>,
     ) -> Self {
         Self {
+            last_execute_block_number: None,
             duration_onchain: false,
             duration,
             onshot,
@@ -141,6 +155,15 @@ impl Poller {
                 log::trace!("event emitter poll thread stopped.");
                 return;
             }
+
+            let block_number = match self.provider.eth_block_number().await {
+                Ok(block_number) => block_number,
+                Err(err) => {
+                    log::error!("get block number err, {}", err.to_string());
+                    self.wait_timeout().await;
+                    continue;
+                }
+            };
 
             let process_events = {
                 let mut events = self.events.lock().unwrap();
@@ -179,13 +202,43 @@ impl Poller {
                         }
                     }
                     EventType::Log(filter) => {
-                        log::warn!(
-                            "skip process filter poll,{}",
-                            serde_json::to_string(&filter).unwrap()
-                        );
+                        let from_block = if let Some(last_execute_block_number) =
+                            self.last_execute_block_number
+                        {
+                            last_execute_block_number
+                        } else {
+                            block_number
+                        };
+
+                        let mut filter = filter.clone();
+
+                        // filter.from_block = Some(from_block);
+                        // filter.to_block = Some(block_number);
+
+                        match self.provider.eth_get_logs(filter.clone()).await {
+                            Ok(logs) => {
+                                if let Some(logs) = logs {
+                                    log::debug!("get logs({:?}) returns {:?}", filter, logs);
+
+                                    self.channel.complete_one(
+                                        EventType::Log(filter.clone()),
+                                        EventArg::Log(logs),
+                                    );
+                                } else {
+                                    log::debug!("get logs({:?}) returns None", filter);
+                                }
+
+                                reserved.push(EventType::Log(filter));
+                            }
+                            Err(err) => {
+                                log::error!("Get logs({:?}) error, {}", filter, err);
+                            }
+                        }
                     }
                 }
             }
+
+            self.last_execute_block_number = Some(block_number);
 
             self.events.lock().unwrap().append(&mut reserved);
 
@@ -193,11 +246,16 @@ impl Poller {
                 Err(err) => {
                     log::error!("calc poll duration failed, {}", err);
                 }
-                Ok(duration) => {
-                    Timeout::new(duration).await;
-                }
+                _ => {}
             }
+
+            self.wait_timeout().await;
         }
+    }
+
+    async fn wait_timeout(&self) {
+        let duration = self.duration.lock().unwrap().clone();
+        Timeout::new(duration).await;
     }
 
     async fn calc_poll_duration(&mut self) -> anyhow::Result<Duration> {
@@ -243,6 +301,7 @@ impl Poller {
     }
 }
 
+/// Transaction instance provide extra wait fn
 pub struct TransactionWaitable<T: Timer> {
     /// Transaction id
     pub tx: H256,
@@ -266,6 +325,25 @@ where
     }
 }
 
+pub struct EventReceiver<T: Timer> {
+    pub filter: Filter,
+
+    receiver: channel::EventReceiver<Event, T>,
+}
+
+impl<T: Timer> EventReceiver<T>
+where
+    T: Unpin,
+{
+    pub async fn next(&mut self) -> Option<PollLogs> {
+        (&mut self.receiver).await.ok().map(|arg| match arg {
+            EventArg::Log(logs) => logs,
+            _ => {
+                panic!("Inner error, returns event arg type error!!!")
+            }
+        })
+    }
+}
 #[cfg(test)]
 mod tests {
     use std::time::Duration;

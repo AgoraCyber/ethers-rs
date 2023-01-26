@@ -1,10 +1,38 @@
 use crate::{bytes_def, request::AccessList};
 
-use ethabi::ethereum_types::{H256, U256};
+use ethabi::ethereum_types::{Bloom, H256, U256};
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde_with::*;
 
+pub use ethabi::TopicFilter;
+
 use crate::Address;
+
+macro_rules! from_json {
+    ($name: ident) => {
+        impl TryFrom<&str> for $name {
+            type Error = serde_json::Error;
+
+            fn try_from(value: &str) -> Result<Self, Self::Error> {
+                serde_json::from_str(value)
+            }
+        }
+
+        impl TryFrom<String> for $name {
+            type Error = serde_json::Error;
+            fn try_from(value: String) -> Result<Self, Self::Error> {
+                Self::try_from(value.as_ref())
+            }
+        }
+
+        impl TryFrom<serde_json::Value> for $name {
+            type Error = serde_json::Error;
+            fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
+                serde_json::from_value(value)
+            }
+        }
+    };
+}
 
 #[derive(Debug, Clone, thiserror::Error)]
 pub enum BlockError {
@@ -12,7 +40,6 @@ pub enum BlockError {
     InvalidSyning,
 }
 
-bytes_def!(BloomFilter);
 bytes_def!(Difficulty);
 bytes_def!(Bytecode);
 
@@ -48,7 +75,7 @@ pub struct Block {
     /// Bloom filter
     #[serde(rename = "logsBloom")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub logs_bloom: Option<BloomFilter>,
+    pub logs_bloom: Option<Bloom>,
 
     /// Difficulty
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -192,27 +219,7 @@ pub struct Transaction {
     pub s: Option<U256>,
 }
 
-impl TryFrom<&str> for Transaction {
-    type Error = serde_json::Error;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        serde_json::from_str(value)
-    }
-}
-
-impl TryFrom<String> for Transaction {
-    type Error = serde_json::Error;
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Self::try_from(value.as_ref())
-    }
-}
-
-impl TryFrom<serde_json::Value> for Transaction {
-    type Error = serde_json::Error;
-    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
-        serde_json::from_value(value)
-    }
-}
+from_json!(Transaction);
 
 /// eth_getBlockByNumber parameter `Block`
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -284,46 +291,55 @@ pub struct Filter {
     #[serde(rename = "toBlock")]
     pub to_block: Option<U256>,
 
-    pub address: Option<FilterAddress>,
+    pub address: Option<AddressFilter>,
 
-    pub topics: Option<FilterTopic>,
+    pub topics: Option<TopicFilter>,
 }
+
+impl From<(Address, TopicFilter)> for Filter {
+    fn from(value: (Address, TopicFilter)) -> Self {
+        Filter {
+            from_block: None,
+            to_block: None,
+            address: Some(AddressFilter::Address(value.0)),
+            topics: Some(value.1),
+        }
+    }
+}
+
+impl From<(Vec<Address>, TopicFilter)> for Filter {
+    fn from(value: (Vec<Address>, TopicFilter)) -> Self {
+        Filter {
+            from_block: None,
+            to_block: None,
+            address: Some(AddressFilter::Addresses(value.0)),
+            topics: Some(value.1),
+        }
+    }
+}
+
+from_json!(Filter);
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
 #[serde(untagged)]
-pub enum FilterAddress {
+pub enum AddressFilter {
     Address(Address),
     Addresses(Vec<Address>),
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Eq, Hash)]
-#[serde(untagged)]
-pub enum FilterTopic {
-    Signle(U256),
-    Multi(Vec<U256>),
-}
-
-impl TryFrom<&str> for Filter {
-    type Error = serde_json::Error;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        serde_json::from_str(value)
+impl From<Address> for AddressFilter {
+    fn from(value: Address) -> Self {
+        AddressFilter::Address(value)
     }
 }
 
-impl TryFrom<String> for Filter {
-    type Error = serde_json::Error;
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Self::try_from(value.as_ref())
+impl From<Vec<Address>> for AddressFilter {
+    fn from(value: Vec<Address>) -> Self {
+        AddressFilter::Addresses(value)
     }
 }
 
-impl TryFrom<serde_json::Value> for Filter {
-    type Error = serde_json::Error;
-    fn try_from(value: serde_json::Value) -> Result<Self, Self::Error> {
-        serde_json::from_value(value)
-    }
-}
+from_json!(AddressFilter);
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Log {
@@ -487,7 +503,7 @@ pub struct TransactionReceipt {
     pub logs: Vec<Log>,
     /// Logs bloom filter string
     #[serde(rename = "logsBloom")]
-    pub logs_bloom: BloomFilter,
+    pub logs_bloom: Bloom,
     /// Only include before the Byzantium upgrade
     pub root: Option<H256>,
 }

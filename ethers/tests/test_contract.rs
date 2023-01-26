@@ -6,7 +6,7 @@ use ethers_hardhat_rs::{
 use ethers_rs::{contract, Client, Ether, ToTxOptions};
 
 // It is not necessary to specify hardhat artifacts path
-contract!(Lock);
+contract!(Lock, hardhat = "sol/artifacts/contracts/Lock.sol/Lock.json");
 
 #[async_std::test]
 async fn test_deploy() {
@@ -32,6 +32,10 @@ async fn test_deploy() {
 
     let balance = client.balance().await.expect("Get balance");
 
+    let mut event_receiver = client
+        .on(lock.address(), lock::events::withdrawal::wildcard_filter())
+        .expect("Create withdrawal event filter");
+
     let mut tx = lock.withdraw().await.expect("Try withdraw");
 
     let receipt = tx.wait().await.expect("Wait withdraw tx mint");
@@ -49,4 +53,21 @@ async fn test_deploy() {
         balance + value - receipt.gas_used * receipt.effective_gas_price,
         balance_after
     );
+
+    let logs = event_receiver.next().await;
+
+    assert_eq!(logs.is_some(), true);
+
+    log::debug!("withdraw logs {:?}", logs);
+}
+
+#[test]
+fn test_event() {
+    _ = pretty_env_logger::try_init();
+
+    // let amount: U256 = "0x111".parse().expect("Parse amount");
+
+    // let when: U256 = "0x111".parse().expect("Parse timestamp");
+
+    log::debug!("{:?}", lock::events::withdrawal::filter());
 }
