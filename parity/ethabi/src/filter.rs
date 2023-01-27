@@ -47,7 +47,25 @@ impl Serialize for TopicFilter {
     where
         S: Serializer,
     {
-        vec![&self.topic0, &self.topic1, &self.topic2, &self.topic3].serialize(serializer)
+        let mut data = vec![];
+
+        if self.topic0.need_serialize() {
+            data.push(&self.topic0)
+        }
+
+        if self.topic1.need_serialize() {
+            data.push(&self.topic1)
+        }
+
+        if self.topic2.need_serialize() {
+            data.push(&self.topic2)
+        }
+
+        if self.topic3.need_serialize() {
+            data.push(&self.topic3)
+        }
+
+        data.serialize(serializer)
     }
 }
 
@@ -85,6 +103,8 @@ impl<'de> Deserialize<'de> for TopicFilter {
 /// Acceptable topic possibilities.
 #[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub enum Topic<T> {
+    /// Should skip serialize.
+    None,
     /// Match any.
     Any,
     /// Match any of the hashes.
@@ -100,6 +120,7 @@ impl<T> Topic<T> {
         F: Fn(T) -> O,
     {
         match self {
+            Topic::None => Topic::None,
             Topic::Any => Topic::Any,
             Topic::OneOf(topics) => Topic::OneOf(topics.into_iter().map(f).collect()),
             Topic::This(topic) => Topic::This(f(topic)),
@@ -110,14 +131,21 @@ impl<T> Topic<T> {
     pub fn is_any(&self) -> bool {
         match *self {
             Topic::Any => true,
-            Topic::This(_) | Topic::OneOf(_) => false,
+            Topic::None | Topic::This(_) | Topic::OneOf(_) => false,
+        }
+    }
+    /// Returns true if topic should be serialized
+    pub fn need_serialize(&self) -> bool {
+        match *self {
+            Topic::None => false,
+            _ => true,
         }
     }
 }
 
 impl<T> Default for Topic<T> {
     fn default() -> Self {
-        Topic::Any
+        Topic::None
     }
 }
 
@@ -145,6 +173,7 @@ impl<T> From<Vec<T>> for Topic<T> {
 impl<T> From<Topic<T>> for Vec<T> {
     fn from(topic: Topic<T>) -> Self {
         match topic {
+            Topic::None => vec![],
             Topic::Any => vec![],
             Topic::This(topic) => vec![topic],
             Topic::OneOf(topics) => topics,
@@ -159,7 +188,7 @@ impl Serialize for Topic<Hash> {
         S: Serializer,
     {
         match *self {
-            Topic::Any => Option::<()>::None.serialize(serializer),
+            Topic::Any | Topic::None => Option::<()>::None.serialize(serializer),
             Topic::OneOf(ref vec) => vec.serialize(serializer),
             Topic::This(ref hash) => hash.serialize(serializer),
         }
@@ -228,7 +257,7 @@ impl<T> ops::Index<usize> for Topic<T> {
 
     fn index(&self, index: usize) -> &Self::Output {
         match *self {
-            Topic::Any => panic!("Topic unavailable"),
+            Topic::Any | Topic::None => panic!("Topic unavailable"),
             Topic::This(ref topic) => {
                 if index != 0 {
                     panic!("Topic unavailable");

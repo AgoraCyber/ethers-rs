@@ -364,12 +364,12 @@ pub struct Log {
 
     pub data: Bytecode,
 
-    pub topics: Vec<U256>,
+    pub topics: Vec<H256>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(untagged)]
-pub enum PollLogs {
+pub enum FilterEvents {
     BlocksOrTransactions(Vec<H256>),
 
     Logs(Vec<Log>),

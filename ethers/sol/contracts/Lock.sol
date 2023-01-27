@@ -7,7 +7,7 @@ import "hardhat/console.sol";
 contract Lock {
     address payable public owner;
 
-    event Withdrawal(uint256 amount, uint256 when);
+    event Withdrawal(uint256 indexed amount, uint256 when);
 
     constructor() payable {
         owner = payable(msg.sender);

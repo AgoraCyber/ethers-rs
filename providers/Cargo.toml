@@ -8,6 +8,8 @@ edition = "2021"
 [dependencies]
 jsonrpc-rs = "^0.1"
 async-timer-rs = "^0.1"
+completeq-rs = "^0.1"
+
 reqwest = { version = "0.11.13",features = ["native-tls","socks"] }
 thiserror = "1.0.38"
 anyhow = "1.0.68"

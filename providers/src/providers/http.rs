@@ -43,10 +43,9 @@ pub fn connect_to<S: AsRef<str> + Clone + Send + 'static + Sync>(url: S) -> Prov
         Ok(())
     });
 
-    Provider::new(jsonrpc_rs::Client::new(
-        format!("eth-provider-https_{}", url.as_ref()),
-        client_transport,
-    ))
+    let tag = format!("eth-provider-https_{}", url.as_ref());
+
+    Provider::new(tag.clone(), jsonrpc_rs::Client::new(tag, client_transport))
 }
 
 #[allow(unused)]

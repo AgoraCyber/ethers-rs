@@ -60,11 +60,12 @@ pub async fn connect_to<S: AsRef<str> + Clone + Send + 'static + Sync>(
 
         Ok(())
     });
+    let tag = format!("eth-provider-ws_{}", url.as_ref());
 
-    Ok(Provider::new(jsonrpc_rs::Client::new(
-        format!("eth-provider-ws_{}", url.as_ref()),
-        client_transport,
-    )))
+    Ok(Provider::new(
+        tag.clone(),
+        jsonrpc_rs::Client::new(tag, client_transport),
+    ))
 }
 
 #[allow(unused)]

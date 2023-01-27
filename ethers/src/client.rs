@@ -1,24 +1,19 @@
-use async_timer_rs::hashed::Timeout;
 use ethers_providers_rs::Provider;
 use ethers_signer_rs::signer::Signer;
 use ethers_types_rs::{
-    Address, AddressFilter, BlockNumberOrTag, Bytecode, Eip55, EthereumUnit, Filter,
-    LegacyTransactionRequest, Status, TopicFilter, H256, U256,
+    Address, BlockNumberOrTag, Bytecode, Eip55, EthereumUnit, LegacyTransactionRequest, Status,
+    H256, U256,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 
-use crate::{
-    events::{EventEmitter, EventReceiver},
-    Error,
-};
+use crate::Error;
 
 /// The client to access ether blockchain functions.
 #[derive(Clone)]
 pub struct Client {
     pub provider: Provider,
     pub signer: Option<Signer>,
-    pub event_emitter: EventEmitter,
 }
 
 impl From<Provider> for Client {
@@ -26,7 +21,6 @@ impl From<Provider> for Client {
         Client {
             provider: value.clone(),
             signer: None,
-            event_emitter: EventEmitter::new(value),
         }
     }
 }
@@ -36,34 +30,11 @@ impl From<(Provider, Signer)> for Client {
         Client {
             provider: value.0.clone(),
             signer: Some(value.1),
-            event_emitter: EventEmitter::new(value.0),
         }
     }
 }
 
 impl Client {
-    pub fn on<A, T>(
-        &mut self,
-        address: A,
-        topic_filter: T,
-    ) -> anyhow::Result<EventReceiver<Timeout>>
-    where
-        A: TryInto<AddressFilter>,
-        A::Error: std::error::Error + Sync + Send + 'static,
-        T: TryInto<TopicFilter>,
-        T::Error: std::error::Error + Sync + Send + 'static,
-    {
-        let address = address.try_into()?;
-        let topic_filter = topic_filter.try_into()?;
-
-        Ok(self.event_emitter.event_filter(Filter {
-            from_block: None,
-            to_block: None,
-            address: Some(address),
-            topics: Some(topic_filter),
-        }))
-    }
-
     /// Check if client is a signer .
     pub fn is_signer(&self) -> bool {
         self.signer.is_some()
@@ -106,7 +77,11 @@ impl Client {
             .send_raw_transaction("deploy", None, call_data, ops)
             .await?;
 
-        let receipt = self.event_emitter.wait_transaction(tx_hash).wait().await?;
+        let receipt = self
+            .provider
+            .register_transaction_listener(tx_hash)?
+            .wait()
+            .await?;
 
         let status = receipt.status.ok_or(Error::TxFailure(tx_hash))?;
 
