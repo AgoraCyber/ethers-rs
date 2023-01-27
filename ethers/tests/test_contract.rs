@@ -31,8 +31,11 @@ async fn test_deploy() {
 
     log::debug!("deploy lock success, {}", lock.address());
 
+    // check withdraw and balance
+
     let balance = client.balance().await.expect("Get after deploy balance");
 
+    // Create Withdrawal event listener on this contract.
     let mut listener = lock
         .wait_event_withdrawal()
         .expect("Register new withdrawal event listener");
@@ -55,6 +58,7 @@ async fn test_deploy() {
         balance_after
     );
 
+    // expect receive one Withdrawal event log
     let logs = listener
         .try_next()
         .await
