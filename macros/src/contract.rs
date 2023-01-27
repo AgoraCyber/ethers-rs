@@ -127,6 +127,13 @@ impl CodeGen for Contract {
             self.functions.iter().map(|f| f.gen_instance_fn()).collect();
 
         let events: Vec<_> = self.events.iter().map(|e| e.generate_event()).collect();
+
+        let event_fns: Vec<_> = self
+            .events
+            .iter()
+            .map(|e| e.generate_instance_fn())
+            .collect();
+
         let logs: Vec<_> = self.events.iter().map(|e| e.generate_log()).collect();
 
         let mod_name = format_ident!(
@@ -220,6 +227,8 @@ impl CodeGen for Contract {
                     }
 
                     #(#instance_functions)*
+
+                    #(#event_fns)*
                 }
 
                 #constructor

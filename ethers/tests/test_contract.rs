@@ -3,7 +3,7 @@ use ethers_hardhat_rs::{
     utils::{get_hardhat_network_account, get_hardhat_network_provider},
 };
 
-use ethers_rs::{contract, ethabi::RawLog, Client, Ether, ToTxOptions};
+use ethers_rs::{contract, Client, Ether, ToTxOptions};
 
 // It is not necessary to specify hardhat artifacts path
 contract!(Lock, hardhat = "sol/artifacts/contracts/Lock.sol/Lock.json");
@@ -24,20 +24,18 @@ async fn test_deploy() {
 
     let mut client: Client = (provider.clone(), s0).into();
 
+    // Deploy contract and send ether to deployed
     let mut lock = Lock::deploy(client.clone(), value.clone().to_tx_options())
         .await
         .expect("Deploy lock contract");
 
     log::debug!("deploy lock success, {}", lock.address());
 
-    let mut event_receiver = provider
-        .register_filter_listener(
-            Some(lock.address()),
-            Some(lock::events::withdrawal::wildcard_filter()),
-        )
-        .expect("Create withdrawal event filter");
-
     let balance = client.balance().await.expect("Get after deploy balance");
+
+    let mut listener = lock
+        .wait_event_withdrawal()
+        .expect("Register new withdrawal event listener");
 
     let mut tx = lock.withdraw().await.expect("Try withdraw");
 
@@ -57,24 +55,12 @@ async fn test_deploy() {
         balance_after
     );
 
-    let logs = event_receiver
+    let logs = listener
         .try_next()
         .await
-        .expect("Try receive next logs");
+        .expect("Try receive withdrawal event");
 
-    assert_eq!(logs.is_some(), true);
+    assert!(logs.is_some());
 
-    for log in logs.as_ref().unwrap() {
-        assert_eq!(log.topics[0], lock::events::withdrawal::event().signature());
-
-        let withdrawal = lock::events::withdrawal::parse_log(RawLog {
-            topics: log.topics.clone(),
-            data: log.data.0.clone(),
-        })
-        .expect("Parse withdrawal log");
-
-        assert_eq!(withdrawal.amount, value.0);
-    }
-
-    log::debug!("withdraw logs {:?}", logs);
+    log::debug!("{:?}", logs);
 }

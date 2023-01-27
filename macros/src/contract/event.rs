@@ -1,8 +1,8 @@
 use super::utils::*;
+use ethers_hardhat_rs::ethabi;
 use heck::{ToSnakeCase, ToUpperCamelCase};
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use ethers_hardhat_rs::ethabi;
 
 /// Structure used to generate contract's event interface.
 pub struct Event {
@@ -161,6 +161,52 @@ impl Event {
         }
     }
 
+    pub fn generate_instance_fn(&self) -> TokenStream {
+        let name = syn::Ident::new(&self.name.to_snake_case(), Span::call_site());
+        let camel_name = syn::Ident::new(&self.name.to_upper_camel_case(), Span::call_site());
+        let filter_declarations = &self.filter_declarations;
+        let filter_definitions = &self.filter_definitions;
+
+        let filter_init = &self.filter_init;
+
+        let on_event_fn = syn::Ident::new(
+            &format!("wait_event_{}", self.name.to_snake_case()),
+            Span::call_site(),
+        );
+        let on_event_with_fn = syn::Ident::new(
+            &format!("wait_event_{}_with", self.name.to_snake_case()),
+            Span::call_site(),
+        );
+
+        quote! {
+            pub fn #on_event_with_fn<#(#filter_declarations),*>(&mut self, #(#filter_definitions),*)
+                -> ethers_rs::Result<ethers_rs::TypedFilterReceiver<ethers_rs::Timeout,events::#name::#camel_name>> {
+
+                    let raw = ethers_rs::ethabi::RawTopicFilter {
+                        #(#filter_init)*
+                        ..Default::default()
+                    };
+
+                    let e = events::#name::event();
+                    let filter = e.filter(raw).expect(INTERNAL_ERR);
+
+                    let receiver = self.0.client.provider.register_filter_listener(Some(self.0.address.clone()),Some(filter))?;
+
+                    Ok(ethers_rs::TypedFilterReceiver::new(events::#name::#camel_name,receiver))
+            }
+
+            pub fn #on_event_fn(&mut self)
+                -> ethers_rs::Result<ethers_rs::TypedFilterReceiver<ethers_rs::Timeout,events::#name::#camel_name>> {
+
+                    let filter = events::#name::wildcard_filter();
+
+                    let receiver = self.0.client.provider.register_filter_listener(Some(self.0.address.clone()),Some(filter))?;
+
+                    Ok(ethers_rs::TypedFilterReceiver::new(events::#name::#camel_name,receiver))
+            }
+        }
+    }
+
     /// Generates rust interface for contract's event.
     pub fn generate_event(&self) -> TokenStream {
         let name_as_string = &self.name.to_upper_camel_case();
@@ -178,6 +224,15 @@ impl Event {
             pub mod #name {
                 use ethers_rs::ethabi;
                 use super::INTERNAL_ERR;
+
+                pub struct #camel_name;
+
+                impl ethabi::ParseLog for #camel_name {
+                    type Log = super::super::logs::#camel_name;
+                    fn parse_log(&self, log: ethabi::RawLog) -> ethabi::Result<super::super::logs::#camel_name> {
+                        parse_log(log)
+                    }
+                }
 
                 pub fn event() -> ethers_rs::ethabi::Event {
                     ethers_rs::ethabi::Event {

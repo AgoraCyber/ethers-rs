@@ -4,7 +4,10 @@ use std::{fmt::Display, sync::Arc, time::Duration};
 
 use async_timer_rs::{hashed::Timeout, Timer};
 use completeq_rs::{error::CompleteQError, result::EmitResult, user_event::UserEvent};
-use ethers_types_rs::*;
+use ethers_types_rs::{
+    ethabi::{ParseLog, RawLog},
+    *,
+};
 use futures::{executor::ThreadPool, task::SpawnExt};
 use once_cell::sync::OnceCell;
 
@@ -395,3 +398,38 @@ where
 }
 
 pub type DefaultFilterReceiver = FilterReceiver<Timeout>;
+
+pub struct TypedFilterReceiver<T, LOG>
+where
+    LOG: ParseLog,
+    T: Timer + Unpin,
+{
+    log: LOG,
+    receiver: FilterReceiver<T>,
+}
+
+impl<T, LOG> TypedFilterReceiver<T, LOG>
+where
+    LOG: ParseLog,
+    T: Timer + Unpin,
+{
+    pub fn new(log: LOG, receiver: FilterReceiver<T>) -> Self {
+        Self { log, receiver }
+    }
+    pub async fn try_next(&mut self) -> anyhow::Result<Option<Vec<LOG::Log>>> {
+        if let Some(logs) = self.receiver.try_next().await? {
+            let mut result = vec![];
+            for log in logs {
+                result.push(self.log.parse_log(RawLog {
+                    data: log.data.0,
+                    topics: log.topics,
+                })?);
+            }
+
+            Ok(Some(result))
+        } else {
+            // end receive loop
+            Ok(None)
+        }
+    }
+}

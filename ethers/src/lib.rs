@@ -6,14 +6,12 @@ pub mod contract;
 pub mod client;
 pub use client::*;
 
-pub use ethers_types_rs::ethabi;
-
 pub use ethers_types_rs::*;
 
 pub use contract::*;
 pub use ethers_providers_rs::{
     DefaultFilterReceiver, DefaultTransactionReceipter, FilterReceiver, Provider,
-    TransactionReceipter,
+    TransactionReceipter, TypedFilterReceiver,
 };
 
 pub mod error;
