@@ -1,5 +1,5 @@
 [package]
-name = "ethereum-types"
+name = "ethers-ethereum-types"
 version = "0.14.1"
 authors = ["Parity Technologies <admin@parity.io>"]
 license = "MIT OR Apache-2.0"
@@ -10,22 +10,44 @@ rust-version = "1.60.0"
 
 [dependencies]
 ethbloom = { version = "0.13", optional = true, default-features = false }
-fixed-hash = { path = "../fixed-hash", version = "0.8", default-features = false, features = ["byteorder", "rustc-hex"] }
-uint-crate = { path = "../uint", package = "uint", version = "0.9", default-features = false }
-primitive-types = { path = "../primitive-types", version = "0.12", features = ["byteorder", "rustc-hex"], default-features = false }
-impl-serde = { path = "../primitive-types/impls/serde", version = "0.4.0", default-features = false, optional = true }
-impl-rlp = { path = "../primitive-types/impls/rlp", version = "0.3", default-features = false, optional = true }
-impl-codec = { version = "0.6.0", path = "../primitive-types/impls/codec", default-features = false, optional = true }
-scale-info = { version = ">=1.0, <3", features = ["derive"], default-features = false, optional = true }
+fixed-hash = { package = "ethers-fixed-hash", path = "../fixed-hash", version = "0.8", default-features = false, features = [
+    "byteorder",
+    "rustc-hex",
+] }
+uint-crate = { path = "../uint", package = "ethers-uint-rs", version = "0.9", default-features = false }
+primitive-types = { package = "ethers-primitive-types-rs", path = "../primitive-types", version = "0.12", features = [
+    "byteorder",
+    "rustc-hex",
+], default-features = false }
+impl-serde = { package = "ethers-impl-serde", path = "../primitive-types/impls/serde", version = "0.4.0", default-features = false, optional = true }
+impl-rlp = { package = "ethers-impl-rlp", path = "../primitive-types/impls/rlp", version = "0.3", default-features = false, optional = true }
+impl-codec = { package = "ethers-impl-codec", version = "0.6.0", path = "../primitive-types/impls/codec", default-features = false, optional = true }
+scale-info = { version = ">=1.0, <3", features = [
+    "derive",
+], default-features = false, optional = true }
 
 [dev-dependencies]
 serde_json = "1.0.41"
 
 [features]
 default = ["std", "ethbloom", "rlp", "serialize"]
-std = ["uint-crate/std", "fixed-hash/std", "ethbloom?/std", "primitive-types/std"]
+std = [
+    "uint-crate/std",
+    "fixed-hash/std",
+    "ethbloom?/std",
+    "primitive-types/std",
+]
 serialize = ["impl-serde", "primitive-types/serde_no_std", "ethbloom/serialize"]
-arbitrary = ["ethbloom/arbitrary", "fixed-hash/arbitrary", "uint-crate/arbitrary"]
+arbitrary = [
+    "ethbloom/arbitrary",
+    "fixed-hash/arbitrary",
+    "uint-crate/arbitrary",
+]
 rlp = ["impl-rlp", "ethbloom/rlp", "primitive-types/rlp"]
-codec = ["impl-codec", "ethbloom/codec", "scale-info", "primitive-types/scale-info"]
+codec = [
+    "impl-codec",
+    "ethbloom/codec",
+    "scale-info",
+    "primitive-types/scale-info",
+]
 num-traits = ["primitive-types/num-traits"]

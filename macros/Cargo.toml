@@ -1,7 +1,10 @@
 [package]
 name = "ethers-macros-rs"
-version = "0.1.0"
-edition = "2021"
+license-file.workspace = true
+edition.workspace = true
+version.workspace = true
+description.workspace = true
+documentation.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -9,7 +12,7 @@ edition = "2021"
 proc-macro = true
 
 [dependencies]
-ethers-hardhat-rs = { path = "../hardhat"}
+ethers-hardhat-rs = { path = "../hardhat" }
 heck = "0.4"
 syn = { version = "^1", features = ["full"] }
 quote = "^1"

@@ -1,7 +1,10 @@
 [package]
 name = "ethers-wallet-rs"
-version = "0.1.0"
-edition = "2021"
+license-file.workspace = true
+edition.workspace = true
+version.workspace = true
+description.workspace = true
+documentation.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,30 +16,30 @@ once_cell = "1.17.0"
 
 serde_json = "^1.0"
 num = "^0.4"
-rand = {version = "^0.8.5", features = ["getrandom"]}
+rand = { version = "^0.8.5", features = ["getrandom"] }
 uuid = { version = "1.2.2", features = ["serde", "v4"] }
 
-sha2 = {version = "0.10.6",optional = true}
-hmac = {version = "0.12.1", optional = true}
-k256 = {version = "^0.12.0", optional = true}
-serde = {version = "1.0.147", features = ["derive"] }
+sha2 = { version = "0.10.6", optional = true }
+hmac = { version = "0.12.1", optional = true }
+k256 = { version = "^0.12.0", optional = true }
+serde = { version = "1.0.147", features = ["derive"] }
 scrypt = { version = "0.10.0", optional = true, default-features = false }
-sha3 = {version = "0.10.6", optional = true}
-aes = {version = "0.8.2", optional = true}
-ctr = {version = "0.9.2", optional = true}
+sha3 = { version = "0.10.6", optional = true }
+aes = { version = "0.8.2", optional = true }
+ctr = { version = "0.9.2", optional = true }
 anyhow = "1.0.68"
 
-ethers-types-rs = { path = "../types"}
-ethers-hash-rs = { path = "../hash"}
+ethers-types-rs = { path = "../types" }
+ethers-hash-rs = { path = "../hash" }
 
 [features]
 default = ["pure"]
-pure = ["k256","sha2","hmac","scrypt","sha3","ctr","aes"]
+pure = ["k256", "sha2", "hmac", "scrypt", "sha3", "ctr", "aes"]
 openssl = []
 
 [dev-dependencies]
 dotenv = "0.15.0"
 pretty_env_logger = "0.4.0"
-rdbc_sqlite3 = {git = "https://github.com/linq-rs/rdbc-sqlite3.git"}
-rdbc = {git = "https://github.com/linq-rs/rdbc.git"}
-async-std = {version = "1.11.0", features = ["attributes", "default"]}
+rdbc_sqlite3 = { git = "https://github.com/linq-rs/rdbc-sqlite3.git" }
+rdbc = { git = "https://github.com/linq-rs/rdbc.git" }
+async-std = { version = "1.11.0", features = ["attributes", "default"] }

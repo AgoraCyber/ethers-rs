@@ -1,16 +1,38 @@
 [workspace]
 members = [
     "providers",
-    "ethers","macros",
+    "ethers",
+    "macros",
     "parity/ethabi",
     "signer",
     "wallet",
     "types",
     "hash",
     "cargo",
-    "hardhat"
+    "hardhat",
     # "parity/ethereum-types",
     # "parity/fixed-hash",
     # "parity/primitive-types",
     # "parity/uint"
 ]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license-file = "LICENSE"
+keywords = ["futures-rs", "ethereum", "timeout", "jsonrpc"]
+description = "Ethereum wallet implementation and utility tools"
+documentation = "https://docs.rs/ethers-rs"
+readme = "README.md"
+homepage = "https://github.com/AgoraCyber/ethers-rs"
+repository = "https://github.com/AgoraCyber/ethers-rs"
+
+
+[workspace.dependencies]
+ethers-macros-rs = { path = "macros", version = "0.1.0" }
+ethers-providers-rs = { path = "providers", version = "0.1.0" }
+ethers-types-rs = { path = "types", version = "0.1.0" }
+ethers-signer-rs = { path = "signer", version = "0.1.0" }
+ethers-wallet-rs = { path = "wallet", version = "0.1.0" }
+ethers-hardhat-rs = { path = "hardhat", version = "0.1.0" }
+ethers-hash-rs = { path = "hash", version = "0.1.0" }

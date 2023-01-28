@@ -1,8 +1,10 @@
 [package]
 name = "ethers-hardhat-rs"
-version = "0.1.0"
-edition = "2021"
-description = "ethers-rs plugin for communication with hardhat project." 
+license-file.workspace = true
+edition.workspace = true
+version.workspace = true
+description.workspace = true
+documentation.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
@@ -17,17 +19,16 @@ async-trait = "0.1.63"
 serde = { version = "^1.0", features = ["derive"] }
 serde_json = "^1.0"
 
-futures = {version = "0.3.25",features = ["thread-pool"]}
+futures = { version = "0.3.25", features = ["thread-pool"] }
 pretty_env_logger = "0.4.0"
 
 
-ethabi = {path = "../parity/ethabi"}
-
-ethers-wallet-rs = { path = "../wallet"}
-ethers-providers-rs = {path = "../providers"}
-ethers-signer-rs = {path = "../signer"}
+ethers-wallet-rs = { workspace = true }
+ethers-providers-rs = { workspace = true }
+ethers-signer-rs = { workspace = true }
+ethers-types-rs = { workspace = true }
 
 [dev-dependencies]
 dotenv = "0.15.0"
-async-std = {version = "1.11.0", features = ["attributes", "default"]}
-criterion = {version = "0.4", features = ["async_futures", "html_reports"]}
+async-std = { version = "1.11.0", features = ["attributes", "default"] }
+criterion = { version = "0.4", features = ["async_futures", "html_reports"] }

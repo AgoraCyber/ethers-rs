@@ -1,7 +1,11 @@
 [package]
 name = "ethers-rs"
-version = "0.1.0"
-edition = "2021"
+license-file.workspace = true
+edition.workspace = true
+version.workspace = true
+description.workspace = true
+documentation.workspace = true
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -16,12 +20,12 @@ serde = { version = "^1.0", features = ["derive"] }
 
 once_cell = "1.17.0"
 
-ethers-macros-rs = {path = "../macros"}
-ethers-providers-rs = {path = "../providers"}
-ethers-types-rs = {path = "../types"}
-ethers-signer-rs = {path = "../signer"}
-ethers-wallet-rs = {path = "../wallet"}
-ethers-hardhat-rs = {path = "../hardhat"}
+ethers-macros-rs = { workspace = true }
+ethers-providers-rs = { workspace = true }
+ethers-types-rs = { workspace = true }
+ethers-signer-rs = { workspace = true }
+ethers-wallet-rs = { workspace = true }
+ethers-hardhat-rs = { workspace = true }
 
 completeq-rs = "^0.1"
 async-timer-rs = "^0.1"
@@ -30,8 +34,8 @@ async-timer-rs = "^0.1"
 [dev-dependencies]
 dotenv = "0.15.0"
 pretty_env_logger = "0.4.0"
-async-std = {version = "1.11.0", features = ["attributes", "default"]}
-criterion = {version = "0.4", features = ["async_futures", "html_reports"]}
+async-std = { version = "1.11.0", features = ["attributes", "default"] }
+criterion = { version = "0.4", features = ["async_futures", "html_reports"] }
 
 [build-dependencies]
-ethers-hardhat-rs = { path = "../hardhat"}
+ethers-hardhat-rs = { workspace = true }

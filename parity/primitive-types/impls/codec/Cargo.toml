@@ -1,5 +1,5 @@
 [package]
-name = "impl-codec"
+name = "ethers-impl-codec"
 version = "0.6.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 license = "MIT OR Apache-2.0"
@@ -9,7 +9,9 @@ edition = "2021"
 rust-version = "1.56.1"
 
 [dependencies]
-parity-scale-codec = { version = "3.0.0", default-features = false, features = ["max-encoded-len"] }
+parity-scale-codec = { version = "3.0.0", default-features = false, features = [
+    "max-encoded-len",
+] }
 
 [features]
 default = ["std"]

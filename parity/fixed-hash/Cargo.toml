@@ -1,5 +1,5 @@
 [package]
-name = "fixed-hash"
+name = "ethers-fixed-hash"
 version = "0.8.0"
 authors = ["Parity Technologies <admin@parity.io>"]
 license = "MIT OR Apache-2.0"
