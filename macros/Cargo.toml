@@ -12,7 +12,7 @@ documentation.workspace = true
 proc-macro = true
 
 [dependencies]
-ethers-hardhat-rs = { path = "../hardhat" }
+ethers-hardhat-rs = { workspace = true }
 heck = "0.4"
 syn = { version = "^1", features = ["full"] }
 quote = "^1"
