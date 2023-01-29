@@ -29,8 +29,8 @@ aes = { version = "0.8.2", optional = true }
 ctr = { version = "0.9.2", optional = true }
 anyhow = "1.0.68"
 
-ethers-types-rs = { path = "../types" }
-ethers-hash-rs = { path = "../hash" }
+ethers-types-rs = { workspace = true }
+ethers-hash-rs = { workspace = true }
 
 [features]
 default = ["pure"]
