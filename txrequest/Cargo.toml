@@ -1,0 +1,22 @@
+[package]
+name = "ethers-txrequest"
+license = "MIT"
+edition.workspace = true
+version.workspace = true
+description = "Typed ethereum transaction request types for rust"
+documentation = "https://docs.rs/ethers-txrequest"
+
+[dependencies]
+# serde
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# internals
+ethers-primitives = { workspace = true }
+serde_rlp = { workspace = true }
+
+sha3 = { workspace = true }
+
+
+# errors
+anyhow = { workspace = true }

@@ -3,7 +3,7 @@
 
 use std::fmt::Display;
 
-use num::{PrimInt, Signed, Unsigned};
+use num::{BigInt, BigUint, Signed, ToPrimitive, Unsigned};
 use serde::{de, Deserialize, Serialize};
 
 use crate::{
@@ -20,7 +20,7 @@ pub enum IntError {
 }
 
 ///
-#[derive(Debug, Clone, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq)]
 pub struct Int<const SIGNED: bool, const LENGTH: usize>(pub [u8; 32]);
 
 impl<const SIGNED: bool, const LENGTH: usize> Int<SIGNED, LENGTH> {
@@ -35,6 +35,32 @@ impl<const SIGNED: bool, const LENGTH: usize> Int<SIGNED, LENGTH> {
         Self(buf)
     }
 }
+
+impl<const LENGTH: usize> Int<true, LENGTH> {
+    pub fn to_bigint(&self) -> BigInt {
+        unimplemented!()
+    }
+}
+
+impl<const LENGTH: usize> Int<false, LENGTH> {
+    pub fn to_biguint(&self) -> BigUint {
+        BigUint::from_bytes_be(&self.0)
+    }
+}
+
+// impl<const LENGTH: usize> From<BigUint> for Int<false, LENGTH> {
+//     fn from(value: BigUint) -> Self {
+//         let bytes = value.to_bytes_be();
+
+//         if bytes.len() > LENGTH {
+//             return Err(IntError::OutOfRange);
+//         }
+
+//         let mut buf = [0u8; 32];
+
+//         buf[(32 - bytes.len())..].clone_from_slice(&bytes);
+//     }
+// }
 
 impl<const SIGNED: bool, const LENGTH: usize> Display for Int<SIGNED, LENGTH> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -183,7 +209,7 @@ impl<'de, const SIGNED: bool, const LENGTH: usize> Deserialize<'de> for Int<SIGN
 
 impl<N, const LENGTH: usize> From<N> for Int<true, LENGTH>
 where
-    N: Signed + PrimInt,
+    N: Signed + ToPrimitive,
 {
     fn from(value: N) -> Self {
         assert!(LENGTH <= 32);
@@ -204,12 +230,12 @@ where
 
 impl<N, const LENGTH: usize> From<N> for Int<false, LENGTH>
 where
-    N: Unsigned + PrimInt,
+    N: Unsigned + ToPrimitive,
 {
     fn from(value: N) -> Self {
         assert!(LENGTH / 8 <= 32 && LENGTH % 8 == 0);
 
-        let bytes = value.to_i128().unwrap().to_be_bytes();
+        let bytes = value.to_u128().unwrap().to_be_bytes();
 
         let mut buf = [0u8; 32];
 
@@ -219,6 +245,7 @@ where
     }
 }
 
+pub type U64 = Int<false, 8>;
 pub type U256 = Int<false, 32>;
 pub type U160 = Int<false, 20>;
 

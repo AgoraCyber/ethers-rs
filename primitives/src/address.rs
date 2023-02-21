@@ -29,7 +29,7 @@ pub enum AddressError {
 }
 
 /// Ethereum address type in binary bytes with format [`rlp`](crate::rlp) and format [`abi`](crate::abi) supports
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub struct Address(
     /// Ethereum address's length is 20 in bytes
     pub [u8; 20],

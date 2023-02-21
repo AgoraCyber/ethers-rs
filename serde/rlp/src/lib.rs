@@ -288,7 +288,7 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
                     }
                 }
 
-                return Err(RlpError::UnsupportType(name.to_owned()));
+                value.serialize(self)
             }
         }
     }

@@ -14,3 +14,25 @@ anyhow = { workspace = true }
 # serde
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+
+# internals
+ethers-primitives = { workspace = true }
+ethers-txrequest = { workspace = true }
+
+
+jsonrpc-rs = { workspace = true }
+async-timer-rs = { workspace = true }
+completeq-rs = { workspace = true }
+
+
+futures = { workspace = true }
+
+once_cell = { workspace = true }
+
+log = { workspace = true }
+
+[dev-dependencies]
+pretty_env_logger = { workspace = true }
+async-std = { workspace = true }
+criterion = { workspace = true }

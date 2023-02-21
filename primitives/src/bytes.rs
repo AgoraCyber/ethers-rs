@@ -1,5 +1,7 @@
 //! Contract abi bytes<M> and bytes type support. those types can aslo be used with eip715 or tx signature.
 
+use std::fmt::Display;
+
 use crate::hex::{FromEtherHex, ToEtherHex};
 
 // use concat_idents::concat_idents;
@@ -13,8 +15,14 @@ pub enum BytesErrors {
 }
 
 /// Type mapping for `bytes<M>` of contract abi
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub struct BytesM<const LEN: usize>(pub [u8; 32]);
+
+impl<const LEN: usize> Display for BytesM<LEN> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.to_eth_hex())
+    }
+}
 
 impl<const LEN: usize> Serialize for BytesM<LEN> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -111,6 +119,12 @@ impl<'de> de::Visitor<'de> for BytesVisitor {
 /// Type mapping for `bytes` of contract abi
 #[derive(Debug, PartialEq, Clone)]
 pub struct Bytes(pub Vec<u8>);
+
+impl Display for Bytes {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.0.to_eth_hex())
+    }
+}
 
 impl Serialize for Bytes {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

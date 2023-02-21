@@ -6,6 +6,7 @@ members = [
     "primitives",
     "eip712",
     "providers",
+    "txrequest",
 ]
 
 [workspace.package]
@@ -75,3 +76,16 @@ serde_rlp = { path = "./serde/rlp", version = "^0.2" }
 ethers-primitives = { path = "./primitives", version = "^0.2" }
 ethers-provider = { path = "./providers", version = "^0.2" }
 ethers-eip712 = { path = "./eip712", version = "^0.2" }
+ethers-txrequest = { path = "./txrequest", version = "^0.2" }
+
+
+jsonrpc-rs = "^0.1"
+async-timer-rs = "^0.1"
+completeq-rs = "^0.1"
+
+# async 
+futures = { version = "^0.3", features = ["thread-pool"] }
+async-std = { version = "1.11.0", features = ["attributes", "default"] }
+
+# bench
+criterion = { version = "0.4", features = ["async_futures", "html_reports"] }
