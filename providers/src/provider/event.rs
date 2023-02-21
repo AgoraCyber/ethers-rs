@@ -114,7 +114,7 @@ impl Provider {
     {
         let tx_hash = tx_hash.try_into()?;
 
-        let event_type = EventType::Transaction(tx_hash);
+        let event_type = EventType::Transaction(tx_hash.clone());
 
         self.events.lock().unwrap().push(event_type.clone());
 
@@ -190,7 +190,7 @@ impl Poller {
             .eth_get_block_by_number(block_number, true)
             .await?;
 
-        let one: U256 = 1.into();
+        let one: U256 = 1usize.into();
 
         let prev_block = self
             .provider
@@ -199,8 +199,9 @@ impl Poller {
 
         if let Some(prev_block) = prev_block {
             if let Some(last_block) = last_block {
-                self.poll_interval_duration =
-                    Duration::from_secs((last_block.timestamp - prev_block.timestamp).as_u64());
+                if let Some(duration) = (last_block.timestamp - prev_block.timestamp).to_u64() {
+                    self.poll_interval_duration = Duration::from_secs(duration);
+                }
 
                 log::debug!(
                     "new poll interval duration is {:?}",
@@ -218,7 +219,7 @@ impl Poller {
 
             self.fetch_and_emit_filter_events(block_number).await?;
 
-            if block_number - self.last_poll_block_number > 1.into() {
+            if block_number - self.last_poll_block_number > 1usize.into() {
                 self.recalc_poll_internval_duration(block_number).await?;
             }
 

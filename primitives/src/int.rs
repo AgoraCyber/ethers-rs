@@ -1,9 +1,12 @@
 //! Primitive int/uint type support for the ethereum rpc/abi
 //!
 
-use std::fmt::Display;
+use std::{
+    fmt::Display,
+    ops::{Add, Sub},
+};
 
-use num::{BigInt, BigUint, Signed, ToPrimitive, Unsigned};
+use num::{bigint::ToBigUint, BigInt, BigUint, Signed, ToPrimitive};
 use serde::{de, Deserialize, Serialize};
 
 use crate::{
@@ -20,7 +23,7 @@ pub enum IntError {
 }
 
 ///
-#[derive(Debug, Clone, PartialEq, Hash, Eq)]
+#[derive(Debug, Clone, PartialEq, Hash, Eq, Copy)]
 pub struct Int<const SIGNED: bool, const LENGTH: usize>(pub [u8; 32]);
 
 impl<const SIGNED: bool, const LENGTH: usize> Int<SIGNED, LENGTH> {
@@ -46,21 +49,33 @@ impl<const LENGTH: usize> Int<false, LENGTH> {
     pub fn to_biguint(&self) -> BigUint {
         BigUint::from_bytes_be(&self.0)
     }
+
+    pub fn to_u64(&self) -> Option<u64> {
+        self.to_biguint().to_u64()
+    }
 }
 
-// impl<const LENGTH: usize> From<BigUint> for Int<false, LENGTH> {
-//     fn from(value: BigUint) -> Self {
-//         let bytes = value.to_bytes_be();
+impl<const LENGTH: usize> Sub for Int<false, LENGTH> {
+    type Output = Int<false, LENGTH>;
 
-//         if bytes.len() > LENGTH {
-//             return Err(IntError::OutOfRange);
-//         }
+    fn sub(self, rhs: Self) -> Self::Output {
+        (self.to_biguint() - rhs.to_biguint()).into()
+    }
+}
 
-//         let mut buf = [0u8; 32];
+impl<const LENGTH: usize> Add for Int<false, LENGTH> {
+    type Output = Int<false, LENGTH>;
 
-//         buf[(32 - bytes.len())..].clone_from_slice(&bytes);
-//     }
-// }
+    fn add(self, rhs: Self) -> Self::Output {
+        (self.to_biguint() + rhs.to_biguint()).into()
+    }
+}
+
+impl<const LENGTH: usize> PartialOrd for Int<false, LENGTH> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.to_biguint().partial_cmp(&other.to_biguint())
+    }
+}
 
 impl<const SIGNED: bool, const LENGTH: usize> Display for Int<SIGNED, LENGTH> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -230,12 +245,14 @@ where
 
 impl<N, const LENGTH: usize> From<N> for Int<false, LENGTH>
 where
-    N: Unsigned + ToPrimitive,
+    N: ToBigUint,
 {
     fn from(value: N) -> Self {
         assert!(LENGTH / 8 <= 32 && LENGTH % 8 == 0);
 
-        let bytes = value.to_u128().unwrap().to_be_bytes();
+        let bytes = value.to_biguint().unwrap_or(0usize.into());
+
+        let bytes = bytes.to_bytes_be();
 
         let mut buf = [0u8; 32];
 
@@ -276,12 +293,12 @@ mod tests {
         assert_eq!(v1, v);
     }
 
-    // #[test]
-    // fn test_rlp() {
-    //     let v = U256::from(1usize);
+    #[test]
+    fn test_arith() {
+        assert!(U256::from(1usize) < U256::from(12usize));
 
-    //     let rlp_data = rlp_encode(&v).expect("rlp encode").to_eth_hex();
+        assert!(U256::from(1001usize) > U256::from(12usize));
 
-    //     assert_eq!(rlp_data, "0x01");
-    // }
+        assert!(U256::from(11usize) == (U256::from(12usize) - 1usize.into()));
+    }
 }
