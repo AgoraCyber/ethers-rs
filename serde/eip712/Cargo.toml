@@ -1,0 +1,23 @@
+[package]
+name = "serde_eip712"
+license = "MIT"
+edition.workspace = true
+version.workspace = true
+description = "EIP712 format for serde"
+documentation = "https://docs.rs/serde_eip712"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# serde
+serde = { workspace = true }
+
+# error
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# other crates
+regex = { workspace = true }
+bytes = { workspace = true }
+
+#crypto
+sha3 = { workspace = true }

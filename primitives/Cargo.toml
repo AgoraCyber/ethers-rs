@@ -1,0 +1,36 @@
+[package]
+name = "ethers-primitives"
+license = "MIT"
+edition.workspace = true
+version.workspace = true
+description = "Primitive types for ethereum, including Rlp/ABI encode/decode support "
+documentation = "https://docs.rs/ethers-primitives"
+
+
+[dependencies]
+
+
+# serde
+serde = { workspace = true }
+
+# error
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+
+# others
+hex = { workspace = true }
+sha3 = { workspace = true }
+num = { workspace = true, features = ["serde"] }
+
+# features
+k256 = { workspace = true, optional = true }
+
+[dev-dependencies]
+# internals
+serde_ethabi = { workspace = true }
+serde_rlp = { workspace = true }
+
+[features]
+default = ["rust_crypto"]
+rust_crypto = ["k256"]

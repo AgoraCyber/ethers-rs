@@ -1,0 +1,16 @@
+[package]
+name = "ethers-providers-rs"
+license = "MIT"
+edition.workspace = true
+version.workspace = true
+description = "Primitive types for ethereum, including Rlp/ABI encode/decode support "
+documentation = "https://docs.rs/ethers-provider-rs"
+
+[dependencies]
+# error
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# serde
+serde = { workspace = true }
+serde_json = { workspace = true }

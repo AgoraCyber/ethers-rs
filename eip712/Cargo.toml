@@ -1,0 +1,24 @@
+[package]
+name = "ethers-eip712"
+license = "MIT"
+edition.workspace = true
+version.workspace = true
+description = "Primitive types for ethereum, including Rlp/ABI encode/decode support "
+documentation = "https://docs.rs/ethers-eip712"
+
+
+[dependencies]
+
+# error
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+# serde
+serde = { workspace = true }
+
+# internals
+ethers-primitives = { workspace = true }
+serde_eip712 = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
