@@ -66,7 +66,7 @@ impl<'de> Deserialize<'de> for Address {
         if deserializer.is_human_readable() {
             let data = String::deserialize(deserializer)?;
 
-            Address::from_checksum_string(&data).map_err(serde::de::Error::custom)
+            Address::from_str(&data, false).map_err(serde::de::Error::custom)
         } else {
             use super::bytes::Bytes32;
 
@@ -87,7 +87,7 @@ pub trait Eip55: Sized {
     fn to_checksum_string(&self) -> String;
 
     /// Load address from string and make a eip55 checksum comparison
-    fn from_checksum_string(source: &str) -> anyhow::Result<Self>;
+    fn from_str(source: &str, checksum: bool) -> anyhow::Result<Self>;
 }
 
 impl Eip55 for Address {
@@ -112,7 +112,7 @@ impl Eip55 for Address {
         data
     }
 
-    fn from_checksum_string(source: &str) -> anyhow::Result<Self> {
+    fn from_str(source: &str, checksum: bool) -> anyhow::Result<Self> {
         let buff = Vec::<u8>::from_eth_hex(source)?;
 
         if buff.len() != 20 {
@@ -121,10 +121,12 @@ impl Eip55 for Address {
 
         let address = Self(buff.try_into().unwrap());
 
-        let expected = address.to_checksum_string();
+        if checksum {
+            let expected = address.to_checksum_string();
 
-        if expected != source {
-            return Err(AddressError::Eip155(source.to_owned()).into());
+            if expected != source {
+                return Err(AddressError::Eip155(source.to_owned()).into());
+            }
         }
 
         Ok(address)
@@ -184,12 +186,12 @@ mod tests {
         let pub_key = PublicKey::from_sec1_bytes(&pub_key).unwrap();
 
         assert_eq!(
-            Address::from_checksum_string("0x8d57B06Cb8E7C8a0515C71B76B019EF4F3ed680d").unwrap(),
+            Address::from_str("0x8d57B06Cb8E7C8a0515C71B76B019EF4F3ed680d", true).unwrap(),
             Address::from(pub_key)
         );
 
         assert_eq!(
-            Address::from_checksum_string("0x8d57B06Cb8E7C8a0515C71B76B019EF4F3ed680d").unwrap(),
+            Address::from_str("0x8d57B06Cb8E7C8a0515C71B76B019EF4F3ed680d", true).unwrap(),
             Address::from(pk)
         );
     }
@@ -197,7 +199,7 @@ mod tests {
     #[test]
     fn test_address_abi() {
         let address =
-            Address::from_checksum_string("0x8d57B06Cb8E7C8a0515C71B76B019EF4F3ed680d").unwrap();
+            Address::from_str("0x8d57B06Cb8E7C8a0515C71B76B019EF4F3ed680d", true).unwrap();
 
         let mut buff = [0u8; 32];
 

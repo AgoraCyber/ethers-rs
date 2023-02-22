@@ -19,3 +19,6 @@ anyhow = { workspace = true }
 regex = { workspace = true }
 bytes = { workspace = true }
 log = { workspace = true }
+
+[dev-dependencies]
+pretty_env_logger = { workspace = true }

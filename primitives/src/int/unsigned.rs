@@ -307,6 +307,9 @@ mod tests {
             rlp_encode(&U256::from(100000usize)).unwrap(),
             rlp_encode(&100000usize).unwrap()
         );
+
+        assert_eq!(rlp_encode(&U256::from(0usize)).unwrap(), [0x80]);
+        assert_eq!(rlp_encode(&U256::from(15usize)).unwrap(), [0x0f]);
     }
 
     #[test]

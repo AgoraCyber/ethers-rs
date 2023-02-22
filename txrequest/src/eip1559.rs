@@ -76,3 +76,46 @@ impl Eip1559TransactionRequest {
         Ok(s.finalize()?.into())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use crate::Eip1559TransactionRequest;
+
+    #[test]
+    fn test_rlp() {
+        let tx = json!({
+          "maxPriorityFeePerGas": "0x0",
+          "maxFeePerGas": "0x0",
+          "gas": "0x0",
+          "nonce": "0x0",
+          "to": null,
+          "value": "0x0",
+          "chainId": "0x1",
+          "type": "0x02",
+          "data": "0x00",
+          "accessList": [
+            {
+              "address": "0x0000000000000000000000000000000000000000",
+              "storageKeys": [
+                "0x0000000000000000000000000000000000000000000000000000000000000000"
+              ]
+            },
+            {
+              "address": "0x0000000000000000000000000000000000000000",
+              "storageKeys": [
+                "0x0000000000000000000000000000000000000000000000000000000000000000"
+              ]
+            }
+          ]
+        });
+
+        let tx: Eip1559TransactionRequest = serde_json::from_value(tx).unwrap();
+
+        assert_eq!(
+            tx.rlp().unwrap().to_string(),
+            "0xf87a0180808080808000f870f7940000000000000000000000000000000000000000e1a00000000000000000000000000000000000000000000000000000000000000000f7940000000000000000000000000000000000000000e1a00000000000000000000000000000000000000000000000000000000000000000"
+        );
+    }
+}

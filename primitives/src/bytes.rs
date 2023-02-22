@@ -176,6 +176,12 @@ impl<const LEN: usize> From<&[u8; LEN]> for Bytes {
     }
 }
 
+impl<const LEN: usize> From<[u8; LEN]> for Bytes {
+    fn from(value: [u8; LEN]) -> Self {
+        Self(value.to_vec())
+    }
+}
+
 pub type Bytes1 = BytesM<1>;
 pub type Bytes32 = BytesM<32>;
 

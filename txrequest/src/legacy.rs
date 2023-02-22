@@ -41,6 +41,8 @@ impl LegacyTransactionRequest {
     pub fn rlp(&self) -> anyhow::Result<Bytes> {
         let mut s = RlpEncoder::default();
 
+        let chain_id = self.chain_id.unwrap_or(U64::new(1u8).unwrap());
+
         (
             &self.nonce,
             &self.gas_price,
@@ -48,6 +50,9 @@ impl LegacyTransactionRequest {
             &self.to,
             &self.value,
             &self.data,
+            chain_id,
+            0x0u8,
+            0x0u8,
         )
             .serialize(&mut s)?;
 
@@ -77,5 +82,51 @@ impl LegacyTransactionRequest {
             .serialize(&mut rlp)?;
 
         Ok(rlp.finalize()?.into())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use crate::LegacyTransactionRequest;
+
+    #[test]
+    fn test_rlp() {
+        let tx = json!({
+            "chainId":"0x1",
+            "nonce": "0x1",
+            "to": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+            "value":"0x1",
+            "data":"0x",
+            "gas":"0x60000",
+            "gasPrice": "0x60000111"
+        });
+
+        let tx: LegacyTransactionRequest = serde_json::from_value(tx).unwrap();
+
+        assert_eq!(
+            tx.rlp().unwrap().to_string(),
+            "0xe4018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c80180018080"
+        );
+    }
+
+    #[test]
+    fn test_rlp1() {
+        let tx = json!({
+            "nonce": "0x9",
+            "to": "0x3535353535353535353535353535353535353535",
+            "value":"0xDE0B6B3A7640000",
+            "data":"0x",
+            "gas":"0x5208",
+            "gasPrice": "0x4A817C800"
+        });
+
+        let tx: LegacyTransactionRequest = serde_json::from_value(tx).unwrap();
+
+        assert_eq!(
+            tx.rlp().unwrap().to_string(),
+            "0xec098504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080018080"
+        );
     }
 }

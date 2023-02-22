@@ -31,10 +31,11 @@ impl<T: FromHex> FromEtherHex for T {
     type Error = T::Error;
 
     fn from_eth_hex<S: AsRef<str>>(t: S) -> Result<Self, Self::Error> {
-        if t.as_ref() == "0x0" {
-            Self::from_hex("00")
+        let buff = t.as_ref().trim_start_matches("0x");
+        if buff.len() % 2 != 0 {
+            Self::from_hex(format!("0{}", buff))
         } else {
-            Self::from_hex(t.as_ref().trim_start_matches("0x"))
+            Self::from_hex(buff)
         }
     }
 }

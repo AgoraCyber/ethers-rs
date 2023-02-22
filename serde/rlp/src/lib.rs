@@ -9,13 +9,13 @@ pub enum RlpError {
     #[error("Unknown error,{0}")]
     Unknown(String),
 
-    #[error("Serilaize multi-element without calling start_list")]
+    #[error("Serilaize multi-element without calling begin_list")]
     List,
 
     #[error("Call finalize without calling end_list")]
     UnclosedList,
 
-    #[error("call end_list before calling start_list")]
+    #[error("call end_list before calling begin_list")]
     UnopenList,
 
     #[error("Unsupport serialize type, {0}")]
@@ -39,18 +39,14 @@ struct RlpList {
 impl RlpList {
     fn finalize(mut self) -> Result<Vec<u8>, RlpError> {
         let len = self.buff.len();
-        if len <= 0xc0 {
-            let mut buff = vec![0xc0 + len as u8];
+        if len <= 55 {
+            let mut buff = vec![0xc0u8 + len as u8];
 
             buff.append(&mut self.buff);
 
             Ok(buff)
         } else {
-            let mut encoder = RlpEncoder::default();
-
-            rlp_encode_usize(&mut encoder, len)?;
-
-            let mut len_buff = encoder.finalize()?;
+            let mut len_buff = unsigned_to_buff(&len.to_be_bytes()).to_vec();
 
             let mut buff = vec![0xf7 + len_buff.len() as u8];
 
@@ -85,11 +81,7 @@ fn rlp_encode_string(bytes: &[u8]) -> Result<Vec<u8>, RlpError> {
             }
         }
         len => {
-            let mut encoder = RlpEncoder::default();
-
-            rlp_encode_usize(&mut encoder, len)?;
-
-            let mut len_buff = encoder.finalize()?;
+            let mut len_buff = unsigned_to_buff(&len.to_be_bytes()).to_vec();
 
             let mut buff = vec![0xb7 + len_buff.len() as u8];
 
@@ -101,14 +93,6 @@ fn rlp_encode_string(bytes: &[u8]) -> Result<Vec<u8>, RlpError> {
     }
 }
 
-fn rlp_encode_usize(encoder: &mut RlpEncoder, value: usize) -> Result<(), RlpError> {
-    let offset: usize = value.leading_zeros() as usize / 8;
-
-    encoder.append_string(&value.to_be_bytes()[offset..])?;
-
-    Ok(())
-}
-
 /// Rlp(RECURSIVE-LENGTH PREFIX) format stream like encoder.
 #[derive(Debug, Default)]
 pub struct RlpEncoder {
@@ -118,7 +102,7 @@ pub struct RlpEncoder {
 
 impl RlpEncoder {
     /// Start a new encoding round for list item
-    pub fn start_list(&mut self) -> Result<(), RlpError> {
+    pub fn begin_list(&mut self) -> Result<(), RlpError> {
         self.list_stack.push(Default::default());
 
         Ok(())
@@ -143,9 +127,9 @@ impl RlpEncoder {
         Ok(())
     }
 
-    /// End the lastest encoding round for list item which is openned by fn [`start_list`](RlpEncoder::start_list)
+    /// End the lastest encoding round for list item which is openned by fn [`begin_list`](RlpEncoder::begin_list)
     ///
-    /// Call [`start_list`](RlpEncoder::start_list) first before calling this fn
+    /// Call [`begin_list`](RlpEncoder::begin_list) first before calling this fn
     pub fn end_list(&mut self) -> Result<(), RlpError> {
         if let Some(list) = self.list_stack.pop() {
             let mut buff = list.finalize()?;
@@ -185,6 +169,12 @@ fn signed_to_buff(bytes: &[u8]) -> &[u8] {
     } else {
         &bytes[lead_zeros..]
     }
+}
+
+fn unsigned_to_buff(bytes: &[u8]) -> &[u8] {
+    let lead_zeros = bytes.iter().take_while(|c| **c == 0x00).count();
+
+    &bytes[lead_zeros..]
 }
 
 impl<'a> ser::Serializer for &'a mut RlpEncoder {
@@ -273,7 +263,7 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
             "address" => {
                 let bytes = unsafe { (value as *const T).cast::<[u8; 32]>().as_ref().unwrap() };
 
-                return self.append_string(&bytes[16..]);
+                return self.append_string(&bytes[12..]);
             }
             _ => {
                 let bytes_regex = Regex::new(r"^bytes(\d{1,2})$").unwrap();
@@ -306,7 +296,17 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
                     }
                 }
 
-                value.serialize(self)
+                self.begin_list()?;
+
+                log::debug!("begin newtype_struct {}", name);
+
+                value.serialize(&mut *self)?;
+
+                log::debug!("end newtype_struct {}", name);
+
+                self.end_list()?;
+
+                Ok(())
             }
         }
     }
@@ -325,20 +325,21 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        unimplemented!("Contract abi don't support rust Option")
+        self.append_string(&[])
     }
 
-    fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-        self.start_list()?;
+    fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+        self.begin_list()?;
+        log::debug!("begin seq {:?}", len);
 
         Ok(self)
     }
 
-    fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
     where
         T: serde::Serialize,
     {
-        unimplemented!("Contract abi don't support rust Option")
+        value.serialize(self)
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
@@ -350,6 +351,8 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
         _name: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStruct, Self::Error> {
+        self.begin_list()?;
+        log::debug!("begin struct");
         Ok(self)
     }
 
@@ -364,7 +367,9 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
     }
 
     fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-        self.start_list()?;
+        self.begin_list()?;
+
+        log::debug!("begin tuple");
         Ok(self)
     }
 
@@ -373,7 +378,8 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
         _name: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeTupleStruct, Self::Error> {
-        self.start_list()?;
+        self.begin_list()?;
+        log::debug!("begin tuple struct");
         Ok(self)
     }
 
@@ -390,37 +396,41 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
     fn serialize_u128(self, v: u128) -> Result<Self::Ok, Self::Error> {
         let bytes = v.to_be_bytes();
 
-        let leading_zeros = v.leading_zeros() as usize / 8;
+        let lead_zeros = bytes.iter().take_while(|c| **c == 0x00).count();
 
-        self.append_string(&bytes[leading_zeros..])
+        self.append_string(&bytes[lead_zeros..])
     }
 
     fn serialize_u16(self, v: u16) -> Result<Self::Ok, Self::Error> {
         let bytes = v.to_be_bytes();
 
-        let leading_zeros = v.leading_zeros() as usize / 8;
+        let lead_zeros = bytes.iter().take_while(|c| **c == 0x00).count();
 
-        self.append_string(&bytes[leading_zeros..])
+        self.append_string(&bytes[lead_zeros..])
     }
 
     fn serialize_u32(self, v: u32) -> Result<Self::Ok, Self::Error> {
         let bytes = v.to_be_bytes();
 
-        let leading_zeros = v.leading_zeros() as usize / 8;
+        let lead_zeros = bytes.iter().take_while(|c| **c == 0x00).count();
 
-        self.append_string(&bytes[leading_zeros..])
+        self.append_string(&bytes[lead_zeros..])
     }
 
     fn serialize_u64(self, v: u64) -> Result<Self::Ok, Self::Error> {
         let bytes = v.to_be_bytes();
 
-        let leading_zeros = v.leading_zeros() as usize / 8;
+        let lead_zeros = bytes.iter().take_while(|c| **c == 0x00).count();
 
-        self.append_string(&bytes[leading_zeros..])
+        self.append_string(&bytes[lead_zeros..])
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
-        self.append_string(&[v])
+        let bytes = v.to_be_bytes();
+
+        let lead_zeros = bytes.iter().take_while(|c| **c == 0x00).count();
+
+        self.append_string(&bytes[lead_zeros..])
     }
 
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
@@ -470,6 +480,7 @@ impl<'a> ser::SerializeSeq for &'a mut RlpEncoder {
     type Ok = ();
     fn end(self) -> Result<Self::Ok, Self::Error> {
         self.end_list()?;
+        log::debug!("end seq");
 
         Ok(())
     }
@@ -539,6 +550,8 @@ impl<'a> ser::SerializeTuple for &'a mut RlpEncoder {
     fn end(self) -> Result<Self::Ok, Self::Error> {
         self.end_list()?;
 
+        log::debug!("end tuple");
+
         Ok(())
     }
 
@@ -596,7 +609,7 @@ impl<'a> ser::SerializeTupleStruct for &'a mut RlpEncoder {
 pub fn rlp_encode<S: Serialize + ?Sized>(value: &S) -> anyhow::Result<Vec<u8>> {
     let mut serializer = RlpEncoder::default();
 
-    value.serialize(&mut serializer).expect("");
+    value.serialize(&mut serializer)?;
 
     Ok(serializer.finalize()?)
 }
@@ -619,8 +632,6 @@ mod tests {
 
         assert_eq!(rlp_encode(&0usize).unwrap(), [0x80]);
 
-        assert_eq!(rlp_encode(&0usize).unwrap(), [0x80]);
-
         assert_eq!(rlp_encode("\x00").unwrap(), [0x00]);
 
         assert_eq!(rlp_encode("\x04\x00").unwrap(), [0x82, 0x04, 0x00]);
@@ -628,18 +639,18 @@ mod tests {
         fn test_lists() -> Vec<u8> {
             let mut encoder = RlpEncoder::default();
 
-            encoder.start_list().unwrap();
+            encoder.begin_list().unwrap();
 
             {
-                encoder.start_list().unwrap();
+                encoder.begin_list().unwrap();
                 encoder.end_list().unwrap();
             }
 
             {
-                encoder.start_list().unwrap();
+                encoder.begin_list().unwrap();
 
                 {
-                    encoder.start_list().unwrap();
+                    encoder.begin_list().unwrap();
                     encoder.end_list().unwrap();
                 }
 
@@ -647,18 +658,18 @@ mod tests {
             }
 
             {
-                encoder.start_list().unwrap();
+                encoder.begin_list().unwrap();
 
                 {
-                    encoder.start_list().unwrap();
+                    encoder.begin_list().unwrap();
                     encoder.end_list().unwrap();
                 }
 
                 {
-                    encoder.start_list().unwrap();
+                    encoder.begin_list().unwrap();
 
                     {
-                        encoder.start_list().unwrap();
+                        encoder.begin_list().unwrap();
                         encoder.end_list().unwrap();
                     }
 
@@ -686,5 +697,12 @@ mod tests {
             rlp_encode("Lorem ipsum dolor sit amet, consectetur adipisicing elit").unwrap(),
             expected
         );
+    }
+
+    #[test]
+    fn test_option() {
+        _ = pretty_env_logger::try_init();
+
+        log::debug!("{:x?}", rlp_encode("").unwrap());
     }
 }

@@ -47,14 +47,6 @@ pub enum NameOrAddress {
     Address(crate::Address),
 }
 
-mod legacy;
-pub use legacy::*;
-
-mod eip2930;
-pub use eip2930::*;
-
-mod eip1559;
-pub use eip1559::*;
 use sha3::{Digest, Keccak256};
 
 tx_json_support!(LegacyTransactionRequest);
@@ -110,3 +102,15 @@ impl TypedTransactionRequest {
         }
     }
 }
+
+mod accesslist;
+pub use accesslist::*;
+
+mod legacy;
+pub use legacy::*;
+
+mod eip2930;
+pub use eip2930::*;
+
+mod eip1559;
+pub use eip1559::*;
