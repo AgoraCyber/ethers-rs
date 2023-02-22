@@ -52,7 +52,13 @@ impl Eip1559TransactionRequest {
         )
             .serialize(&mut s)?;
 
-        Ok(s.finalize()?.into())
+        let mut buff = vec![0x02u8];
+
+        let mut append = s.finalize()?.into();
+
+        buff.append(&mut append);
+
+        Ok(buff.into())
     }
 
     /// Returns signed tx rlp encoding stream.
@@ -69,16 +75,25 @@ impl Eip1559TransactionRequest {
             &self.value,
             &self.data,
             &self.access_list,
-            signature,
+            signature.v,
+            signature.r,
+            signature.s,
         )
             .serialize(&mut s)?;
 
-        Ok(s.finalize()?.into())
+        let mut buff = vec![0x02u8];
+
+        let mut append = s.finalize()?.into();
+
+        buff.append(&mut append);
+
+        Ok(buff.into())
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use ethers_primitives::Eip1559Signature;
     use serde_json::json;
 
     use crate::Eip1559TransactionRequest;
@@ -115,7 +130,14 @@ mod tests {
 
         assert_eq!(
             tx.rlp().unwrap().to_string(),
-            "0xf87a0180808080808000f870f7940000000000000000000000000000000000000000e1a00000000000000000000000000000000000000000000000000000000000000000f7940000000000000000000000000000000000000000e1a00000000000000000000000000000000000000000000000000000000000000000"
+            "0x02f87a0180808080808000f870f7940000000000000000000000000000000000000000e1a00000000000000000000000000000000000000000000000000000000000000000f7940000000000000000000000000000000000000000e1a00000000000000000000000000000000000000000000000000000000000000000"
+        );
+
+        let sig: Eip1559Signature = "0x007a53fb20b46d9cc2600d8dc3168a698d41c0dec029d46db4ba88ffe359bbe4092536bd58c593edcda36c5f2e35ed4db158b0cab202b6b2648403117e483a9b30".parse().unwrap();
+
+        assert_eq!(
+            tx.rlp_signed(sig).unwrap().to_string(),
+            "0x02f8bd0180808080808000f870f7940000000000000000000000000000000000000000e1a00000000000000000000000000000000000000000000000000000000000000000f7940000000000000000000000000000000000000000e1a0000000000000000000000000000000000000000000000000000000000000000080a07a53fb20b46d9cc2600d8dc3168a698d41c0dec029d46db4ba88ffe359bbe409a02536bd58c593edcda36c5f2e35ed4db158b0cab202b6b2648403117e483a9b30"
         );
     }
 }

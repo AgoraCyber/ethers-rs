@@ -87,6 +87,7 @@ impl LegacyTransactionRequest {
 
 #[cfg(test)]
 mod tests {
+    use ethers_primitives::Eip1559Signature;
     use serde_json::json;
 
     use crate::LegacyTransactionRequest;
@@ -108,6 +109,13 @@ mod tests {
         assert_eq!(
             tx.rlp().unwrap().to_string(),
             "0xe4018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c80180018080"
+        );
+
+        let sig: Eip1559Signature = "0x016c7e1e13070e6f10e51d7d20e986c59fd080fc6afc5508f44e8b0a84a58b7d1a13c20fa2b6d77ae6814a41b674946387dde6401c73eb0cab2246a2981c48e344".parse().unwrap();
+
+        assert_eq!(
+            tx.rlp_signed(sig).unwrap().to_string(),
+            "0xf864018460000111830600009470997970c51812dc3a010c7d01b50e0d17dc79c8018026a06c7e1e13070e6f10e51d7d20e986c59fd080fc6afc5508f44e8b0a84a58b7d1aa013c20fa2b6d77ae6814a41b674946387dde6401c73eb0cab2246a2981c48e344"
         );
     }
 
