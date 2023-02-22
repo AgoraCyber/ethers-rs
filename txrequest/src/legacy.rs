@@ -62,10 +62,10 @@ impl LegacyTransactionRequest {
         let chain_id = self
             .chain_id
             .as_ref()
-            .map(|c| c.to_biguint())
+            .map(|c| c.0.clone())
             .unwrap_or(Default::default());
 
-        let v: U64 = (signature.v + 35 + chain_id * 2usize).into();
+        let v: U64 = U64::new(signature.v + 35 + chain_id * 2usize).unwrap();
 
         (
             &self.nonce,
