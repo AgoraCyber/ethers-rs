@@ -3,6 +3,8 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::error::ProviderError;
 
+pub use ethers_txrequest::AccessList;
+
 /// Hash with 256 bits length.
 pub type H256 = Bytes32;
 
@@ -30,21 +32,6 @@ macro_rules! from_json {
             }
         }
     };
-}
-
-/// Access list
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct AccessList(Vec<Access>);
-
-from_json!(AccessList);
-
-/// Access token
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct Access {
-    pub address: Address,
-
-    pub storage_keys: Vec<H256>,
 }
 
 /// When a Contract creates a log, it can include up to 4 pieces of data to be indexed by.
