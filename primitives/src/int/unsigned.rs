@@ -1,6 +1,6 @@
 use std::ops::{Add, Mul, Sub};
 
-use num::{bigint::ToBigUint, BigUint, FromPrimitive, ToPrimitive};
+use num::{bigint::ToBigUint, BigUint, FromPrimitive, ToPrimitive, Unsigned};
 use serde::{de, Deserialize, Serialize};
 
 use crate::{BytesVisitor, FromEtherHex, ToEtherHex};
@@ -42,7 +42,7 @@ fn to_bytes32(value: BigUint, bits: usize) -> Result<[u8; 32], UintError> {
 impl<const BITS: usize> Uint<BITS> {
     /// Create `Unit<BITS>` from [`ToBigUint`].
     /// Returns [`OutOfRange`](UintError::OutOfRange) or [`ToBigUnit`](UintError::ToBigUnit) if failed.
-    pub fn new<N: ToBigUint>(value: N) -> Result<Self, UintError> {
+    pub fn new<N: ToBigUint + Unsigned>(value: N) -> Result<Self, UintError> {
         if let Some(value) = value.to_biguint() {
             to_bytes32(value, BITS).map(|c| Self(c))
         } else {
@@ -274,3 +274,66 @@ macro_rules! convert_builtin_unsigned {
 }
 
 convert_builtin_unsigned!(Uint, usize, u128, u64, u32, u16, u8);
+
+#[cfg(test)]
+mod tests {
+    use serde_ethabi::{from_abi, to_abi};
+    use serde_rlp::rlp_encode;
+
+    use crate::ToEtherHex;
+
+    use super::*;
+
+    #[test]
+    fn test_arith() {
+        let lhs = Uint::<8>::new(1u8).unwrap();
+        let rhs = Uint::<8>::new(4u8).unwrap();
+
+        assert_eq!(lhs < rhs, true);
+
+        assert_eq!((rhs - lhs), Uint::<8>::new(3u8).unwrap());
+    }
+
+    #[test]
+    fn test_rlp() {
+        _ = pretty_env_logger::try_init();
+
+        assert_eq!(
+            rlp_encode(&U256::from(0usize)).unwrap(),
+            rlp_encode(&0usize).unwrap()
+        );
+
+        assert_eq!(
+            rlp_encode(&U256::from(100000usize)).unwrap(),
+            rlp_encode(&100000usize).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_abi() {
+        fn check<const BITS: usize>(value: Uint<BITS>, expect: &str) {
+            assert_eq!(to_abi(&value).unwrap().to_eth_hex(), expect);
+
+            let buff = Vec::<u8>::from_eth_hex(expect).unwrap();
+
+            let expect: Uint<BITS> = from_abi(buff).unwrap();
+
+            assert_eq!(value, expect);
+        }
+
+        check(
+            U256::from(69usize),
+            "0x0000000000000000000000000000000000000000000000000000000000000045",
+        );
+
+        check(
+            U256::from(69usize),
+            "0x0000000000000000000000000000000000000000000000000000000000000045",
+        );
+
+        check(
+            U256::from(1usize),
+            "0x0000000000000000000000000000000000000000000000000000000000000001",
+        );
+    }
+}

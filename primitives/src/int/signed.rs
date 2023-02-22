@@ -1,9 +1,6 @@
 use std::ops::{Add, Mul, Sub};
 
-use num::{
-    bigint::{Sign, ToBigInt},
-    BigInt, FromPrimitive, ToPrimitive,
-};
+use num::{bigint::ToBigInt, BigInt, FromPrimitive, Signed, ToPrimitive};
 use serde::{de, Deserialize, Serialize};
 
 use crate::{BytesVisitor, FromEtherHex, ToEtherHex};
@@ -22,7 +19,7 @@ pub enum SignedError {
 }
 
 /// unit<M> type mapping
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct Int<const BITS: usize>(pub [u8; 32]);
 
 fn to_bytes32(value: BigInt, bits: usize) -> Result<[u8; 32], SignedError> {
@@ -33,11 +30,12 @@ fn to_bytes32(value: BigInt, bits: usize) -> Result<[u8; 32], SignedError> {
         )));
     }
 
-    let (sign, bytes) = value.to_bytes_be();
+    let bytes = value.to_signed_bytes_be();
 
-    let mut buff = match sign {
-        Sign::Minus => [0xffu8; 32],
-        _ => [0u8; 32],
+    let mut buff = if value.is_negative() {
+        [0xffu8; 32]
+    } else {
+        [0u8; 32]
     };
 
     buff[(32 - bytes.len())..].copy_from_slice(&bytes);
@@ -48,7 +46,7 @@ fn to_bytes32(value: BigInt, bits: usize) -> Result<[u8; 32], SignedError> {
 impl<const BITS: usize> Int<BITS> {
     /// Create `Unit<BITS>` from [`ToBigInt`].
     /// Returns [`OutOfRange`](SignedError::OutOfRange) or [`ToBigUnit`](SignedError::ToBigUnit) if failed.
-    pub fn new<N: ToBigInt>(value: N) -> Result<Self, SignedError> {
+    pub fn new<N: ToBigInt + Signed>(value: N) -> Result<Self, SignedError> {
         if let Some(value) = value.to_bigint() {
             to_bytes32(value, BITS).map(|c| Self(c))
         } else {
@@ -61,15 +59,19 @@ impl<const BITS: usize> Int<BITS> {
 
 impl<const BITS: usize> From<Int<BITS>> for BigInt {
     fn from(value: Int<BITS>) -> Self {
-        let lead_ones = value.0.iter().take_while(|c| **c == 0xff).count();
+        BigInt::from(&value)
+    }
+}
 
-        let sign = if lead_ones > 0 {
-            Sign::Minus
-        } else {
-            Sign::NoSign
-        };
+impl<const BITS: usize> From<&Int<BITS>> for BigInt {
+    fn from(value: &Int<BITS>) -> Self {
+        BigInt::from_signed_bytes_be(&value.0[(32 - BITS / 8)..])
+    }
+}
 
-        BigInt::from_bytes_be(sign, &value.0)
+impl<const BITS: usize> PartialOrd for Int<BITS> {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        BigInt::from(self).partial_cmp(&BigInt::from(other))
     }
 }
 
@@ -143,7 +145,7 @@ impl<const BITS: usize> Serialize for Int<BITS> {
             serializer.serialize_str(&(&self.0[lead_zeros..]).to_eth_hex())
         } else {
             // for rlp/eip712/abi serializers
-            let name = format!("uint{}", BITS);
+            let name = format!("int{}", BITS);
 
             let static_name = unsafe { &*(&name as *const String) };
 
@@ -170,7 +172,7 @@ impl<'de, const BITS: usize> de::Visitor<'de> for IntVisitor<BITS> {
 
         if value.len() - lead_ones + 1 > BITS / 8 {
             return Err(SignedError::OutOfRange(format!(
-                "{} convert to uint<{}> failed",
+                "{} convert to int<{}> failed",
                 v, BITS
             )))
             .map_err(de::Error::custom);
@@ -228,7 +230,7 @@ impl<'de, const BITS: usize> Deserialize<'de> for Int<BITS> {
             deserializer.deserialize_any(IntVisitor)
         } else {
             // for rlp/eip712/abi serializers
-            let name = format!("uint{}", BITS);
+            let name = format!("int{}", BITS);
 
             let static_name = unsafe { &*(&name as *const String) };
 
@@ -302,3 +304,77 @@ macro_rules! convert_builtin_signed {
 }
 
 convert_builtin_signed!(Int, isize, i128, i64, i32, i16, i8);
+
+pub type I256 = Int<256>;
+pub type I64 = Int<64>;
+
+#[cfg(test)]
+mod tests {
+    use serde_ethabi::{from_abi, to_abi};
+    use serde_rlp::rlp_encode;
+
+    use crate::ToEtherHex;
+
+    use super::*;
+
+    #[test]
+    fn test_arith() {
+        if let Some(value) = Option::<i8>::from(I256::new(-1i8).unwrap()) {
+            assert_eq!(value, -1i8);
+        }
+
+        if let Some(value) = Option::<i8>::from(I256::new(-4i8).unwrap()) {
+            assert_eq!(value, -4i8);
+        }
+
+        let lhs = Int::<8>::new(-1i8).unwrap();
+        let rhs = Int::<8>::new(-4i8).unwrap();
+
+        assert_eq!(lhs > rhs, true);
+
+        assert_eq!((rhs - lhs), Int::<8>::new(-3i8).unwrap());
+
+        assert_eq!(
+            BigInt::from(I256::new(-4isize).unwrap()),
+            BigInt::from_i8(-4).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_rlp() {
+        _ = pretty_env_logger::try_init();
+
+        assert_eq!(
+            rlp_encode(&I256::from(0isize)).unwrap(),
+            rlp_encode(&0usize).unwrap()
+        );
+
+        assert_eq!(
+            rlp_encode(&I256::from(100000isize)).unwrap(),
+            rlp_encode(&100000isize).unwrap()
+        );
+    }
+
+    #[test]
+    fn test_abi() {
+        fn check<const BITS: usize>(value: Int<BITS>, expect: &str) {
+            assert_eq!(to_abi(&value).unwrap().to_eth_hex(), expect);
+
+            let buff = Vec::<u8>::from_eth_hex(expect).unwrap();
+
+            let expect: Int<BITS> = from_abi(buff).unwrap();
+
+            assert_eq!(value, expect);
+        }
+
+        check(
+            I256::from(-69isize),
+            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffbb",
+        );
+
+        check(
+            I256::from(-1isize),
+            "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        );
+    }
+}

@@ -176,6 +176,17 @@ impl RlpEncoder {
     }
 }
 
+fn signed_to_buff(bytes: &[u8]) -> &[u8] {
+    let lead_ones = bytes.iter().take_while(|c| **c == 0xff).count();
+    let lead_zeros = bytes.iter().take_while(|c| **c == 0x00).count();
+
+    if lead_ones > 0 {
+        &bytes[(lead_ones - 1)..]
+    } else {
+        &bytes[lead_zeros..]
+    }
+}
+
 impl<'a> ser::Serializer for &'a mut RlpEncoder {
     type Ok = ();
     type Error = RlpError;
@@ -214,31 +225,31 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
     fn serialize_i128(self, v: i128) -> Result<Self::Ok, Self::Error> {
         let bytes = v.to_be_bytes();
 
-        self.append_string(&bytes)
+        self.append_string(signed_to_buff(&bytes))
     }
 
     fn serialize_i16(self, v: i16) -> Result<Self::Ok, Self::Error> {
         let bytes = v.to_be_bytes();
 
-        self.append_string(&bytes)
+        self.append_string(signed_to_buff(&bytes))
     }
 
     fn serialize_i32(self, v: i32) -> Result<Self::Ok, Self::Error> {
         let bytes = v.to_be_bytes();
 
-        self.append_string(&bytes)
+        self.append_string(signed_to_buff(&bytes))
     }
 
     fn serialize_i64(self, v: i64) -> Result<Self::Ok, Self::Error> {
         let bytes = v.to_be_bytes();
 
-        self.append_string(&bytes)
+        self.append_string(signed_to_buff(&bytes))
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
         let bytes = v.to_be_bytes();
 
-        self.append_string(&bytes)
+        self.append_string(signed_to_buff(&bytes))
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
@@ -284,15 +295,14 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
                         let bytes =
                             unsafe { (value as *const T).cast::<[u8; 32]>().as_ref().unwrap() };
 
-                        let length = if caps.get(1).is_some() {
-                            bytes.iter().take_while(|c| **c == 0).count()
+                        if caps.get(1).is_some() {
+                            let lead_zeros = bytes.iter().take_while(|c| **c == 0).count();
+                            let buff = &bytes[lead_zeros..];
+
+                            return self.append_string(buff);
                         } else {
-                            bytes.iter().take_while(|c| **c == 0xff).count()
-                        };
-
-                        let buff = &bytes[length..];
-
-                        return self.append_string(buff);
+                            return self.append_string(signed_to_buff(bytes));
+                        }
                     }
                 }
 
