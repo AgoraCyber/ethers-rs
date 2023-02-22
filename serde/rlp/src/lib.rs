@@ -284,7 +284,15 @@ impl<'a> ser::Serializer for &'a mut RlpEncoder {
                         let bytes =
                             unsafe { (value as *const T).cast::<[u8; 32]>().as_ref().unwrap() };
 
-                        return self.append_string(&bytes[(32 - len)..]);
+                        let length = if caps.get(1).is_some() {
+                            bytes.iter().take_while(|c| **c == 0).count()
+                        } else {
+                            bytes.iter().take_while(|c| **c == 0xff).count()
+                        };
+
+                        let buff = &bytes[length..];
+
+                        return self.append_string(buff);
                     }
                 }
 

@@ -12,7 +12,12 @@ pub trait ToEtherHex {
 
 impl<T: ToHex> ToEtherHex for T {
     fn to_eth_hex(&self) -> String {
-        format!("0x{}", self.encode_hex::<String>())
+        let hex_str = self.encode_hex::<String>();
+        if hex_str == "00" {
+            "0x0".to_owned()
+        } else {
+            format!("0x{}", hex_str)
+        }
     }
 }
 
@@ -26,6 +31,10 @@ impl<T: FromHex> FromEtherHex for T {
     type Error = T::Error;
 
     fn from_eth_hex<S: AsRef<str>>(t: S) -> Result<Self, Self::Error> {
-        Self::from_hex(t.as_ref().trim_start_matches("0x"))
+        if t.as_ref() == "0x0" {
+            Self::from_hex("00")
+        } else {
+            Self::from_hex(t.as_ref().trim_start_matches("0x"))
+        }
     }
 }

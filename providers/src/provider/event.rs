@@ -199,7 +199,7 @@ impl Poller {
 
         if let Some(prev_block) = prev_block {
             if let Some(last_block) = last_block {
-                if let Some(duration) = (last_block.timestamp - prev_block.timestamp).to_u64() {
+                if let Some(duration) = (last_block.timestamp - prev_block.timestamp).into() {
                     self.poll_interval_duration = Duration::from_secs(duration);
                 }
 

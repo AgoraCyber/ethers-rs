@@ -59,13 +59,9 @@ impl LegacyTransactionRequest {
         let mut rlp = RlpEncoder::default();
 
         // encode v,r,s
-        let chain_id = self
-            .chain_id
-            .as_ref()
-            .map(|c| c.0.clone())
-            .unwrap_or(Default::default());
+        let chain_id = self.chain_id.clone().unwrap_or(Default::default());
 
-        let v: U64 = U64::new(signature.v + 35 + chain_id * 2usize).unwrap();
+        let v: U64 = U64::from(signature.v) + 35usize + chain_id * 2usize;
 
         (
             &self.nonce,
