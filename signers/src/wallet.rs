@@ -143,12 +143,9 @@ async fn sign_typed_data(
     wallet: Wallet,
     data: TypedData<serde_json::Value>,
 ) -> RPCResult<Option<Eip1559Signature>> {
-    let hashed = data.sign_hash().map_err(map_error)?;
+    log::debug!("{}", serde_json::to_string_pretty(&data).unwrap());
 
-    assert_eq!(
-        "0xbe609aee343fb3c4b28e1df9e632fca64fcfaede20f02e86244efddf30957bd2",
-        hashed.to_string()
-    );
+    let hashed = data.sign_hash().map_err(map_error)?;
 
     let signature = wallet.sign(hashed).map_err(map_error)?;
 
@@ -274,6 +271,6 @@ mod tests {
             .await
             .expect("Sign typed_data mail");
 
-        assert_eq!(signature.to_string(),"0x6ea8bb309a3401225701f3565e32519f94a0ea91a5910ce9229fe488e773584c0390416a2190d9560219dab757ecca2029e63fa9d1c2aebf676cc25b9f03126a1b");
+        assert_eq!(signature.to_string(),"0x006ea8bb309a3401225701f3565e32519f94a0ea91a5910ce9229fe488e773584c0390416a2190d9560219dab757ecca2029e63fa9d1c2aebf676cc25b9f03126a");
     }
 }

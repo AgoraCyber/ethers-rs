@@ -21,3 +21,5 @@ bytes = { workspace = true }
 log = { workspace = true }
 #crypto
 sha3 = { workspace = true }
+
+ethers_primitives = { workspace = true }

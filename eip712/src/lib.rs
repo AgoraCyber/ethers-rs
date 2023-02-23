@@ -195,6 +195,14 @@ mod tests {
             "0xbe609aee343fb3c4b28e1df9e632fca64fcfaede20f02e86244efddf30957bd2"
         );
 
+        let expect_request: TypedData<serde_json::Value> =
+            serde_json::from_str(include_str!("./eip712.json")).unwrap();
+
+        assert_eq!(
+            expect_request.sign_hash().unwrap().to_eth_hex(),
+            "0xbe609aee343fb3c4b28e1df9e632fca64fcfaede20f02e86244efddf30957bd2"
+        );
+
         expect_request.sign_hash().unwrap();
     }
 }

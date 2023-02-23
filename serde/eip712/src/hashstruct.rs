@@ -2,6 +2,7 @@
 
 use std::collections::HashMap;
 
+use ethers_primitives::{Address, FromEtherHex, ToEtherHex};
 use regex::Regex;
 use serde::{ser, Serialize, Serializer};
 use sha3::{Digest, Keccak256};
@@ -27,6 +28,12 @@ pub enum EncodeDataError {
     UnclosedTuple,
     #[error("Encode data is empty")]
     Empty,
+
+    #[error("Bytes32OutofRange: {0}")]
+    Bytes32OutofRange(String),
+
+    #[error("IntOutofRange: {0}")]
+    IntOutofRange(String),
 }
 
 impl ser::Error for EncodeDataError {
@@ -49,7 +56,12 @@ impl TupleEncoder {
         self.fields.push(data);
     }
 
+    fn last_name(&self) -> Option<&String> {
+        self.names.last()
+    }
+
     fn append_element_name(&mut self, name: &str) {
+        log::debug!("append element {} index {}", name, self.names.len());
         self.names.push(name.to_owned());
     }
 
@@ -66,6 +78,13 @@ impl TupleEncoder {
                 .find(|(_, n)| n.as_str() == field.name)
                 .map(|(index, _)| index)
                 .unwrap();
+
+            log::debug!(
+                "hash update element {} with index {}: {:x?}",
+                field.name,
+                index,
+                (&self.fields[index]).to_eth_hex()
+            );
 
             hasher.update(&self.fields[index])
         }
@@ -254,6 +273,22 @@ impl<'a> EIP712StructHasher<'a> {
             Err(EncodeDataError::EndTuple)
         }
     }
+
+    fn element_type_name(&self) -> Result<Option<String>, EncodeDataError> {
+        if let Some(tuple) = self.tuple_stack.last() {
+            if let Some(name) = tuple.last_name() {
+                let (_, fields) = self.type_stack.last().unwrap();
+
+                if let Some(field) = fields.iter().find(|f| f.name.as_str() == name) {
+                    return Ok(Some(field.r#type.clone()));
+                }
+            }
+
+            Ok(None)
+        } else {
+            Err(EncodeDataError::EndTuple)
+        }
+    }
 }
 
 impl<'a, 'b> Serializer for &'a mut EIP712StructHasher<'b> {
@@ -404,6 +439,66 @@ impl<'a, 'b> Serializer for &'a mut EIP712StructHasher<'b> {
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
+        log::debug!("serialize_str {}", v);
+
+        if let Some(type_name) = self.element_type_name()? {
+            match type_name.as_str() {
+                "bytes" => {
+                    let bytes = Vec::<u8>::from_eth_hex(v).map_err(ser::Error::custom)?;
+
+                    return self
+                        .append_element(Keccak256::new().chain_update(bytes).finalize().into());
+                }
+                "address" => {
+                    let address = Address::try_from(v).map_err(ser::Error::custom)?;
+
+                    let mut bytes = [0u8; 32];
+
+                    bytes[12..].copy_from_slice(&address.0);
+
+                    return self.append_element(bytes);
+                }
+                _ => {
+                    let bytes_regex = Regex::new(r"^bytes(\d{1,2})$").unwrap();
+                    let int_regex = Regex::new(r"^(u)?int(\d{1,3})$").unwrap();
+
+                    if let Some(caps) = bytes_regex.captures(&type_name) {
+                        let len: usize = caps[1].parse().unwrap();
+                        if len <= 32 {
+                            let buff = Vec::<u8>::from_eth_hex(v).map_err(ser::Error::custom)?;
+
+                            if len < buff.len() {
+                                return Err(EncodeDataError::Bytes32OutofRange(v.to_owned()));
+                            }
+
+                            let mut bytes = [0u8; 32];
+
+                            bytes.copy_from_slice(&buff);
+
+                            return self.append_element(bytes);
+                        }
+                    }
+
+                    if let Some(caps) = int_regex.captures(&type_name) {
+                        let len: usize = caps[2].parse().unwrap();
+                        if len <= 256 {
+                            let buff = Vec::<u8>::from_eth_hex(v).map_err(ser::Error::custom)?;
+
+                            if len < buff.len() * 8 {
+                                return Err(EncodeDataError::IntOutofRange(v.to_owned()));
+                            }
+
+                            let mut bytes = [0u8; 32];
+
+                            bytes[(32 - buff.len())..].copy_from_slice(&buff);
+
+                            return self.append_element(bytes.to_owned());
+                        }
+                    }
+                }
+            }
+        }
+
         self.append_element(
             Keccak256::new()
                 .chain_update(v.as_bytes())
