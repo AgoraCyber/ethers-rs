@@ -65,7 +65,14 @@ impl<const BITS: usize> Int<BITS> {
 
 impl<const BITS: usize> Display for Int<BITS> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", BigInt::from(self))
+        let lead_ones = self.0.iter().take_while(|c| **c == 0xff).count();
+        let lead_zeros = self.0.iter().take_while(|c| **c == 0x00).count();
+
+        if lead_ones > 0 {
+            write!(f, "{}", (&self.0[(lead_ones - 1)..]).to_eth_hex())
+        } else {
+            write!(f, "{}", (&self.0[lead_zeros..]).to_eth_hex())
+        }
     }
 }
 
@@ -178,9 +185,7 @@ impl<const BITS: usize> Serialize for Int<BITS> {
         S: serde::Serializer,
     {
         if serializer.is_human_readable() {
-            let lead_zeros = self.0.iter().take_while(|c| **c == 0).count();
-
-            serializer.serialize_str(&(&self.0[lead_zeros..]).to_eth_hex())
+            serializer.serialize_str(&self.to_string())
         } else {
             // for rlp/eip712/abi serializers
             let name = format!("int{}", BITS);

@@ -1,5 +1,5 @@
 [package]
-name = "ethers-wallet"
+name = "ethers_wallet"
 license-file.workspace = true
 edition.workspace = true
 version.workspace = true
@@ -33,7 +33,7 @@ sha3 = { workspace = true, optional = true }
 pbkdf2 = { version = "^0.11", optional = true }
 
 #internals
-ethers-primitives = { workspace = true }
+ethers_primitives = { workspace = true }
 
 [dev-dependencies]
 pretty_env_logger = { workspace = true }

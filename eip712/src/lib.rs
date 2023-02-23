@@ -4,8 +4,19 @@ use serde::{Deserialize, Serialize};
 
 pub use serde_eip712::*;
 
-use ethers_primitives::{Address, Bytes32, U256};
+use ethers_primitives::{Address, Bytes32, H256, U256};
+use sha3::{Digest, Keccak256};
 
+pub fn keccak256<S>(bytes: S) -> [u8; 32]
+where
+    S: AsRef<[u8]>,
+{
+    let mut hasher = Keccak256::new();
+
+    hasher.update(bytes.as_ref());
+
+    hasher.finalize().into()
+}
 ///
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -24,9 +35,9 @@ pub struct EIP712Domain {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
-pub struct TypedData<V>
+pub struct TypedData<M>
 where
-    V: Serialize,
+    M: Serialize,
 {
     /// The custom types used by signing message.
     pub types: HashMap<String, TypeDefinition>,
@@ -37,7 +48,16 @@ where
     /// seperator of the message.
     pub domain: EIP712Domain,
     /// The message to be signed.
-    pub message: V,
+    pub message: M,
+}
+
+impl<M> TypedData<M>
+where
+    M: Serialize,
+{
+    pub fn sign_hash(&self) -> anyhow::Result<H256> {
+        Ok(keccak256(eip712_encode(&self.domain, &self.message)?).into())
+    }
 }
 /// encode(domainSeparator : 𝔹²⁵⁶, message : 𝕊)
 pub fn eip712_encode<S: Serialize>(domain: &EIP712Domain, value: &S) -> anyhow::Result<[u8; 66]> {
@@ -158,6 +178,8 @@ mod tests {
             serde_json::from_str(include_str!("./eip712.json")).unwrap();
 
         assert_eq!(eip712_into_request(domain, mail).unwrap(), expect_request);
+
+        expect_request.sign_hash().unwrap();
     }
 
     #[test]

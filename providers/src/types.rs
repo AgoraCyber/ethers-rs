@@ -5,9 +5,6 @@ use crate::error::ProviderError;
 
 pub use ethers_eip2718::AccessList;
 
-/// Hash with 256 bits length.
-pub type H256 = Bytes32;
-
 macro_rules! from_json {
     ($name: ident) => {
         impl TryFrom<&str> for $name {

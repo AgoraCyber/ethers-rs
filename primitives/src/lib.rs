@@ -14,3 +14,5 @@ pub use self::hex::*;
 
 mod sig;
 pub use sig::*;
+
+pub type H256 = Bytes32;

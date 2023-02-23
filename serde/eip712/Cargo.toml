@@ -10,7 +10,7 @@ documentation = "https://docs.rs/serde_eip712"
 [dependencies]
 # serde
 serde = { workspace = true }
-
+serde_json = { workspace = true }
 # error
 thiserror = { workspace = true }
 anyhow = { workspace = true }

@@ -19,7 +19,7 @@ pub enum Eip1559SigError {
 
 /// Ethereum signature structure.
 ///
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Eip1559Signature {
     pub v: u8,
     pub r: U256,

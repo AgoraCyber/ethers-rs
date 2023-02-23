@@ -1,5 +1,5 @@
 [package]
-name = "ethers-eip712"
+name = "ethers_eip712"
 license = "MIT"
 edition.workspace = true
 version.workspace = true
@@ -12,12 +12,12 @@ documentation = "https://docs.rs/ethers-eip712"
 # error
 thiserror = { workspace = true }
 anyhow = { workspace = true }
-
+sha3 = { workspace = true }
 # serde
 serde = { workspace = true }
 
 # internals
-ethers-primitives = { workspace = true }
+ethers_primitives = { workspace = true }
 serde_eip712 = { workspace = true }
 
 [dev-dependencies]

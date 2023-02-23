@@ -1,5 +1,5 @@
 [package]
-name = "ethers-providers-rs"
+name = "ethers_providers"
 license = "MIT"
 edition.workspace = true
 version.workspace = true
@@ -17,8 +17,8 @@ serde_json = { workspace = true }
 
 
 # internals
-ethers-primitives = { workspace = true }
-ethers-eip2718 = { workspace = true }
+ethers_primitives = { workspace = true }
+ethers_eip2718 = { workspace = true }
 
 # agora
 jsonrpc-rs = { workspace = true }

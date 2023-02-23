@@ -1,5 +1,5 @@
 [package]
-name = "ethers-eip2718"
+name = "ethers_eip2718"
 license = "MIT"
 edition.workspace = true
 version.workspace = true
@@ -12,7 +12,7 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 # internals
-ethers-primitives = { workspace = true }
+ethers_primitives = { workspace = true }
 serde_rlp = { workspace = true }
 
 sha3 = { workspace = true }

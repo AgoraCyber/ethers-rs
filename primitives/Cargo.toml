@@ -1,5 +1,5 @@
 [package]
-name = "ethers-primitives"
+name = "ethers_primitives"
 license = "MIT"
 edition.workspace = true
 version.workspace = true
@@ -33,6 +33,7 @@ k256 = { workspace = true, optional = true }
 serde_ethabi = { workspace = true }
 serde_rlp = { workspace = true }
 pretty_env_logger = { workspace = true }
+serde_json = { workspace = true }
 
 [features]
 default = ["rust_crypto"]

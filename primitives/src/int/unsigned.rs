@@ -61,7 +61,9 @@ impl<const BITS: usize> Uint<BITS> {
 
 impl<const BITS: usize> Display for Uint<BITS> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", BigUint::from(self))
+        let lead_zeros = self.0.iter().take_while(|c| **c == 0).count();
+
+        write!(f, "{}", (&self.0[lead_zeros..]).to_eth_hex())
     }
 }
 
@@ -161,9 +163,7 @@ impl<const BITS: usize> Serialize for Uint<BITS> {
         S: serde::Serializer,
     {
         if serializer.is_human_readable() {
-            let lead_zeros = self.0.iter().take_while(|c| **c == 0).count();
-
-            serializer.serialize_str(&(&self.0[lead_zeros..]).to_eth_hex())
+            serializer.serialize_str(&self.to_string())
         } else {
             // for rlp/eip712/abi serializers
             let name = format!("uint{}", BITS);
@@ -301,6 +301,7 @@ convert_builtin_unsigned!(Uint, usize, u128, u64, u32, u16, u8);
 #[cfg(test)]
 mod tests {
     use serde_ethabi::{from_abi, to_abi};
+    use serde_json::json;
     use serde_rlp::rlp_encode;
 
     use crate::ToEtherHex;
@@ -361,5 +362,12 @@ mod tests {
             U256::from(1usize),
             "0x0000000000000000000000000000000000000000000000000000000000000001",
         );
+    }
+
+    #[test]
+    fn test_json() {
+        let data: Vec<U256> = serde_json::from_value(json!(["0x1"])).unwrap();
+
+        assert_eq!(json!(["0x1"]), serde_json::to_value(&data).unwrap());
     }
 }

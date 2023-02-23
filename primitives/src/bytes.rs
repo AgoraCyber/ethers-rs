@@ -19,12 +19,18 @@ pub enum BytesErrors {
 }
 
 /// Type mapping for `bytes<M>` of contract abi
-#[derive(Debug, PartialEq, Clone, Eq, Hash)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash, Default)]
 pub struct BytesM<const LEN: usize>(pub [u8; 32]);
 
 impl<const LEN: usize> Display for BytesM<LEN> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0.to_eth_hex())
+    }
+}
+
+impl<const LEN: usize> AsRef<[u8]> for BytesM<LEN> {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
     }
 }
 
@@ -138,7 +144,7 @@ impl<'de> de::Visitor<'de> for BytesVisitor {
 }
 
 /// Type mapping for `bytes` of contract abi
-#[derive(Debug, PartialEq, Clone, Eq)]
+#[derive(Debug, PartialEq, Clone, Eq, Default)]
 pub struct Bytes(pub Vec<u8>);
 
 impl Display for Bytes {
