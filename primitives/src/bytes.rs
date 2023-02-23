@@ -76,7 +76,7 @@ impl<'de, const LEN: usize> Deserialize<'de> for BytesM<LEN> {
     where
         D: serde::Deserializer<'de>,
     {
-        let buff = if deserializer.is_human_readable() {
+        if deserializer.is_human_readable() {
             let data = String::deserialize(deserializer)?;
 
             let buff = Vec::<u8>::from_eth_hex(data).map_err(serde::de::Error::custom)?;
@@ -85,7 +85,11 @@ impl<'de, const LEN: usize> Deserialize<'de> for BytesM<LEN> {
                 return Err(BytesErrors::BytesMOutOfRange).map_err(serde::de::Error::custom);
             }
 
-            buff
+            let mut temp = [0u8; 32];
+
+            temp[..buff.len()].copy_from_slice(&buff[..buff.len()]);
+
+            Ok(Self(temp))
         } else {
             let name = format!("bytes{}", LEN);
 
@@ -98,14 +102,12 @@ impl<'de, const LEN: usize> Deserialize<'de> for BytesM<LEN> {
                 return Err(BytesErrors::BytesMOutOfRange).map_err(serde::de::Error::custom);
             }
 
-            buff
-        };
+            let mut temp = [0u8; 32];
 
-        let mut temp = [0u8; 32];
+            temp[..LEN].copy_from_slice(&buff[..LEN]);
 
-        temp[..LEN].copy_from_slice(&buff[..LEN]);
-
-        Ok(Self(temp))
+            Ok(Self(temp))
+        }
     }
 }
 

@@ -542,8 +542,8 @@ pub type TypeDefinition = Vec<TypeDefinitionField>;
 /// EIP712 field of type definition.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct TypeDefinitionField {
-    name: String,
-    r#type: String,
+    pub name: String,
+    pub r#type: String,
 }
 
 /// Convert [`serializable`] value to eip712 encode type.

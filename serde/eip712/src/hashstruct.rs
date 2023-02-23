@@ -1,10 +1,12 @@
 //! EIP712 `encodeData` implementation using the serde [`Serialize`] framework.
 
+use std::collections::HashMap;
+
 use regex::Regex;
 use serde::{ser, Serialize, Serializer};
 use sha3::{Digest, Keccak256};
 
-use super::enctype::EIP712TypeEncoder;
+use crate::TypeDefinition;
 
 #[derive(Debug, thiserror::Error)]
 pub enum EncodeDataError {
@@ -13,6 +15,9 @@ pub enum EncodeDataError {
 
     #[error("Unsupport type for eip712, {0}")]
     UnsupportType(String),
+
+    #[error("Type definition not found, {0}")]
+    TypeDefinitionNotFound(String),
 
     #[error("Close tuple before calling start_tuple function")]
     EndTuple,
@@ -35,6 +40,7 @@ impl ser::Error for EncodeDataError {
 
 #[derive(Debug, Default)]
 struct TupleEncoder {
+    names: Vec<String>,
     fields: Vec<[u8; 32]>,
 }
 
@@ -43,28 +49,51 @@ impl TupleEncoder {
         self.fields.push(data);
     }
 
-    fn finalize(self, type_hash: Option<[u8; 32]>) -> [u8; 32] {
+    fn append_element_name(&mut self, name: &str) {
+        self.names.push(name.to_owned());
+    }
+
+    fn finalize(self, type_hash: [u8; 32], definition: TypeDefinition) -> [u8; 32] {
         let mut hasher = Keccak256::new();
 
-        if let Some(type_hash) = type_hash {
-            hasher.update(&type_hash);
-        }
+        hasher.update(&type_hash);
 
-        for field in self.fields {
-            hasher.update(&field)
+        for field in definition {
+            let index = self
+                .names
+                .iter()
+                .enumerate()
+                .find(|(_, n)| n.as_str() == field.name)
+                .map(|(index, _)| index)
+                .unwrap();
+
+            hasher.update(&self.fields[index])
         }
 
         hasher.finalize().into()
     }
 }
 
-#[derive(Debug, Default)]
-pub struct EIP712StructHasher {
+#[derive(Debug)]
+pub struct EIP712StructHasher<'a> {
     hashed: Option<[u8; 32]>,
     tuple_stack: Vec<TupleEncoder>,
+    types: &'a HashMap<String, TypeDefinition>,
+    primary_type: &'a str,
+    type_stack: Vec<(String, TypeDefinition)>,
 }
 
-impl EIP712StructHasher {
+fn extract_type_name(name: &str) -> String {
+    let regex = Regex::new(r#"^([^\[]+)\[\d*\]$"#).unwrap();
+
+    if let Some(caps) = regex.captures(name) {
+        caps[1].to_owned()
+    } else {
+        name.to_owned()
+    }
+}
+
+impl<'a> EIP712StructHasher<'a> {
     /// Returns json string for types, and close serializer.
     pub fn finalize(mut self) -> Result<[u8; 32], EncodeDataError> {
         if !self.tuple_stack.is_empty() {
@@ -78,6 +107,111 @@ impl EIP712StructHasher {
         }
     }
 
+    fn start_encode_type(&mut self, name: &str) -> Result<(), EncodeDataError> {
+        self.append_element_name(name)?;
+
+        if self.type_stack.is_empty() {
+            if let Some(definition) = self.types.get(self.primary_type) {
+                self.type_stack
+                    .push((self.primary_type.to_owned(), definition.to_owned()));
+            } else {
+                return Err(EncodeDataError::TypeDefinitionNotFound(
+                    self.primary_type.to_owned(),
+                ));
+            }
+        }
+
+        let parent_type = self.type_stack.last().unwrap();
+
+        if let Some(type_definition) = parent_type.1.iter().find(|d| d.name == name) {
+            log::debug!("start encode type {}", type_definition.r#type);
+
+            let type_name = extract_type_name(&type_definition.r#type);
+
+            if let Some(definition) = self.types.get(&type_name) {
+                self.type_stack.push((type_name, definition.to_owned()));
+
+                return Ok(());
+            } else {
+                // assume is builtin type
+                log::debug!("process builtin type {}", type_name);
+                return Ok(());
+            }
+        } else {
+            log::debug!("maybe none field {}", name);
+            return Ok(());
+            // return Err(EncodeDataError::TypeDefinitionNotFound(name.to_owned()));
+        }
+    }
+
+    // pub fn end_encode_type(&mut self) -> Result<(), EncodeDataError> {
+    //     self.type_stack.pop();
+
+    //     Ok(())
+    // }
+
+    fn type_hash(&mut self) -> Result<[u8; 32], EncodeDataError> {
+        if self.type_stack.is_empty() {
+            if let Some(definition) = self.types.get(self.primary_type) {
+                self.type_stack
+                    .push((self.primary_type.to_owned(), definition.to_owned()));
+            } else {
+                return Err(EncodeDataError::TypeDefinitionNotFound(
+                    self.primary_type.to_owned(),
+                ));
+            }
+        }
+
+        let primary_type = self.type_stack.last().unwrap();
+
+        let mut types = HashMap::<String, (String, TypeDefinition)>::new();
+
+        let mut stack = vec![primary_type];
+
+        while !stack.is_empty() {
+            let current = stack.pop().unwrap();
+            for field in &current.1 {
+                let type_name = extract_type_name(&field.r#type);
+
+                if !types.contains_key(&type_name) {
+                    if let Some(definition) = self.types.get(&type_name) {
+                        types.insert(type_name.clone(), (type_name, definition.to_owned()));
+                    }
+                }
+            }
+        }
+
+        let mut keys = types.keys().collect::<Vec<_>>();
+
+        keys.sort_by(|a, b| a.cmp(b));
+
+        let mut sorted = vec![primary_type];
+
+        for key in keys {
+            let value = types.get(key.as_str());
+            sorted.push(value.unwrap());
+        }
+
+        let encode_type = sorted
+            .iter()
+            .map(|(name, fields)| {
+                let fields = fields
+                    .iter()
+                    .map(|f| format!("{} {}", f.r#type, f.name))
+                    .collect::<Vec<_>>();
+                format!("{}({})", name, fields.join(","))
+            })
+            .collect::<Vec<_>>()
+            .join("");
+
+        log::debug!("encode type {}", encode_type);
+
+        Ok(Keccak256::new()
+            .chain_update(encode_type.as_bytes())
+            .finalize()
+            .into())
+    }
+
     /// Start encode tuple(e.g, <Type>[5], Structure)
     pub fn start_tuple(&mut self) -> Result<(), EncodeDataError> {
         self.tuple_stack.push(TupleEncoder {
@@ -87,9 +221,9 @@ impl EIP712StructHasher {
         Ok(())
     }
 
-    pub fn end_tuple(&mut self, type_hash: Option<[u8; 32]>) -> Result<(), EncodeDataError> {
+    pub fn end_tuple(&mut self) -> Result<(), EncodeDataError> {
         if let Some(tuple) = self.tuple_stack.pop() {
-            let encode_data = tuple.finalize(type_hash);
+            let encode_data = tuple.finalize(self.type_hash()?, self.type_stack.pop().unwrap().1);
 
             if let Some(tuple) = self.tuple_stack.last_mut() {
                 tuple.append_element(encode_data);
@@ -111,9 +245,18 @@ impl EIP712StructHasher {
             Err(EncodeDataError::EndTuple)
         }
     }
+
+    fn append_element_name(&mut self, name: &str) -> Result<(), EncodeDataError> {
+        if let Some(tuple) = self.tuple_stack.last_mut() {
+            tuple.append_element_name(name);
+            Ok(())
+        } else {
+            Err(EncodeDataError::EndTuple)
+        }
+    }
 }
 
-impl<'a> Serializer for &'a mut EIP712StructHasher {
+impl<'a, 'b> Serializer for &'a mut EIP712StructHasher<'b> {
     type Ok = ();
     type Error = EncodeDataError;
     type SerializeSeq = Self;
@@ -121,7 +264,7 @@ impl<'a> Serializer for &'a mut EIP712StructHasher {
     type SerializeTupleStruct = Self;
     type SerializeTupleVariant = Self;
     type SerializeMap = Self;
-    type SerializeStruct = EIP712StructHaserSerializeStruct<'a>;
+    type SerializeStruct = Self;
     type SerializeStructVariant = Self;
 
     fn is_human_readable(&self) -> bool {
@@ -176,7 +319,9 @@ impl<'a> Serializer for &'a mut EIP712StructHasher {
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-        unimplemented!("EIP712 don't support map")
+        self.start_tuple()?;
+
+        Ok(self)
     }
 
     fn serialize_newtype_struct<T: ?Sized>(
@@ -269,20 +414,12 @@ impl<'a> Serializer for &'a mut EIP712StructHasher {
 
     fn serialize_struct(
         self,
-        name: &'static str,
+        _name: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStruct, Self::Error> {
-        let mut type_encoder = EIP712TypeEncoder::default();
-
-        // ensure that `start_tuple` returns true.
-        assert!(type_encoder.start_tuple(name).map_err(ser::Error::custom)?);
-
         self.start_tuple()?;
 
-        Ok(EIP712StructHaserSerializeStruct {
-            type_encoder,
-            hasher: self,
-        })
+        Ok(self)
     }
 
     fn serialize_struct_variant(
@@ -359,23 +496,12 @@ impl<'a> Serializer for &'a mut EIP712StructHasher {
     }
 }
 
-pub struct EIP712StructHaserSerializeStruct<'a> {
-    type_encoder: EIP712TypeEncoder,
-    hasher: &'a mut EIP712StructHasher,
-}
-
-impl<'a> ser::SerializeStruct for EIP712StructHaserSerializeStruct<'a> {
+impl<'a, 'b> ser::SerializeStruct for &'a mut EIP712StructHasher<'b> {
     type Error = EncodeDataError;
 
     type Ok = ();
-    fn end(mut self) -> Result<Self::Ok, Self::Error> {
-        self.type_encoder.end_tuple().map_err(ser::Error::custom)?;
-
-        let encode_type = self.type_encoder.finalize().map_err(ser::Error::custom)?;
-
-        let type_hash = Keccak256::new().chain_update(encode_type).finalize().into();
-
-        self.hasher.end_tuple(Some(type_hash))
+    fn end(self) -> Result<Self::Ok, Self::Error> {
+        self.end_tuple()
     }
 
     fn serialize_field<T: ?Sized>(
@@ -386,41 +512,45 @@ impl<'a> ser::SerializeStruct for EIP712StructHaserSerializeStruct<'a> {
     where
         T: serde::Serialize,
     {
-        self.type_encoder
-            .append_field_name(key)
-            .map_err(ser::Error::custom)?;
-        value
-            .serialize(&mut self.type_encoder)
-            .map_err(ser::Error::custom)?;
-
-        value.serialize(&mut *self.hasher)
+        self.start_encode_type(key)?;
+        value.serialize(&mut **self)
     }
 }
 
-impl<'a> ser::SerializeMap for &'a mut EIP712StructHasher {
+impl<'a, 'b> ser::SerializeMap for &'a mut EIP712StructHasher<'b> {
     type Error = EncodeDataError;
 
     type Ok = ();
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        unimplemented!()
+        self.end_tuple()
     }
 
-    fn serialize_key<T: ?Sized>(&mut self, _key: &T) -> Result<(), Self::Error>
+    fn serialize_key<T: ?Sized>(&mut self, key: &T) -> Result<(), Self::Error>
     where
         T: serde::Serialize,
     {
-        unimplemented!()
+        let name = serde_json::to_string(key).map_err(ser::Error::custom)?;
+
+        let reg = Regex::new(r#"^"[^"]*"$"#).unwrap();
+
+        if !reg.is_match(&name) {
+            return Err(EncodeDataError::Unknown(
+                "HashStruct only support map with string key".to_owned(),
+            ));
+        }
+
+        self.start_encode_type(&name.as_str()[1..(name.len() - 1)])
     }
 
-    fn serialize_value<T: ?Sized>(&mut self, _value: &T) -> Result<(), Self::Error>
+    fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
     where
         T: serde::Serialize,
     {
-        unimplemented!()
+        value.serialize(&mut **self)
     }
 }
 
-impl<'a> ser::SerializeSeq for &'a mut EIP712StructHasher {
+impl<'a, 'b> ser::SerializeSeq for &'a mut EIP712StructHasher<'b> {
     type Error = EncodeDataError;
 
     type Ok = ();
@@ -436,7 +566,7 @@ impl<'a> ser::SerializeSeq for &'a mut EIP712StructHasher {
     }
 }
 
-impl<'a> ser::SerializeStructVariant for &'a mut EIP712StructHasher {
+impl<'a, 'b> ser::SerializeStructVariant for &'a mut EIP712StructHasher<'b> {
     type Error = EncodeDataError;
 
     type Ok = ();
@@ -456,7 +586,7 @@ impl<'a> ser::SerializeStructVariant for &'a mut EIP712StructHasher {
     }
 }
 
-impl<'a> ser::SerializeTuple for &'a mut EIP712StructHasher {
+impl<'a, 'b> ser::SerializeTuple for &'a mut EIP712StructHasher<'b> {
     type Error = EncodeDataError;
 
     type Ok = ();
@@ -472,7 +602,7 @@ impl<'a> ser::SerializeTuple for &'a mut EIP712StructHasher {
     }
 }
 
-impl<'a> ser::SerializeTupleVariant for &'a mut EIP712StructHasher {
+impl<'a, 'b> ser::SerializeTupleVariant for &'a mut EIP712StructHasher<'b> {
     type Error = EncodeDataError;
 
     type Ok = ();
@@ -488,7 +618,7 @@ impl<'a> ser::SerializeTupleVariant for &'a mut EIP712StructHasher {
     }
 }
 
-impl<'a> ser::SerializeTupleStruct for &'a mut EIP712StructHasher {
+impl<'a, 'b> ser::SerializeTupleStruct for &'a mut EIP712StructHasher<'b> {
     type Error = EncodeDataError;
 
     type Ok = ();
@@ -506,8 +636,18 @@ impl<'a> ser::SerializeTupleStruct for &'a mut EIP712StructHasher {
 
 /// Calculate struct hash,
 /// see [`Definition of hashStruct`](https://eips.ethereum.org/EIPS/eip-712) for more information
-pub fn eip712_hash_struct<S: Serialize>(value: S) -> Result<[u8; 32], EncodeDataError> {
-    let mut hasher = EIP712StructHasher::default();
+pub fn eip712_hash_struct<S: Serialize>(
+    primary_type: &str,
+    types: &HashMap<String, TypeDefinition>,
+    value: &S,
+) -> Result<[u8; 32], EncodeDataError> {
+    let mut hasher = EIP712StructHasher {
+        type_stack: vec![],
+        types,
+        hashed: None,
+        tuple_stack: vec![],
+        primary_type,
+    };
 
     value.serialize(&mut hasher)?;
 

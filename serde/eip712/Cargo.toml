@@ -18,6 +18,6 @@ anyhow = { workspace = true }
 # other crates
 regex = { workspace = true }
 bytes = { workspace = true }
-
+log = { workspace = true }
 #crypto
 sha3 = { workspace = true }

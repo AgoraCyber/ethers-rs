@@ -56,23 +56,48 @@ where
     M: Serialize,
 {
     pub fn sign_hash(&self) -> anyhow::Result<H256> {
-        Ok(keccak256(eip712_encode(&self.domain, &self.message)?).into())
+        Ok(keccak256(self.encode()?).into())
+    }
+
+    pub fn encode(&self) -> anyhow::Result<[u8; 66]> {
+        let domain = eip712_hash_struct("EIP712Domain", &self.types, &self.domain)?;
+
+        let message = eip712_hash_struct(&self.primary_type, &self.types, &self.message)?;
+
+        // "\x19\x01" ‖ domainSeparator ‖ hashStruct(message)
+        let mut buff = [0u8; 66];
+
+        buff[0..2].copy_from_slice(&[0x19, 0x01]);
+        buff[2..34].copy_from_slice(&domain);
+        buff[34..66].copy_from_slice(&message);
+
+        Ok(buff)
     }
 }
-/// encode(domainSeparator : 𝔹²⁵⁶, message : 𝕊)
-pub fn eip712_encode<S: Serialize>(domain: &EIP712Domain, value: &S) -> anyhow::Result<[u8; 66]> {
-    let domain = eip712_hash_struct(domain)?;
-    let message = eip712_hash_struct(value)?;
+// /// encode(domainSeparator : 𝔹²⁵⁶, message : 𝕊)
+// pub fn eip712_encode<S: Serialize>(domain: &EIP712Domain, value: &S) -> anyhow::Result<[u8; 66]> {
+//     let type_definitions = eip712_type_definitions(&domain)?;
+//     let domain = eip712_hash_struct("EIP712Domain".to_owned(), type_definitions, domain)?;
 
-    // "\x19\x01" ‖ domainSeparator ‖ hashStruct(message)
-    let mut buff = [0u8; 66];
+//     let encode_type = eip712_encode_type(&value)?;
 
-    buff[0..2].copy_from_slice(&[0x19, 0x01]);
-    buff[2..34].copy_from_slice(&domain);
-    buff[34..66].copy_from_slice(&message);
+//     let pos = encode_type.find("(").unwrap();
 
-    Ok(buff)
-}
+//     let primary_type = encode_type[..pos].to_string();
+
+//     let type_definitions = eip712_type_definitions(&value)?;
+
+//     let message = eip712_hash_struct(primary_type, type_definitions, value)?;
+
+//     // "\x19\x01" ‖ domainSeparator ‖ hashStruct(message)
+//     let mut buff = [0u8; 66];
+
+//     buff[0..2].copy_from_slice(&[0x19, 0x01]);
+//     buff[2..34].copy_from_slice(&domain);
+//     buff[34..66].copy_from_slice(&message);
+
+//     Ok(buff)
+// }
 /// Create eth_signTypedData payload.
 pub fn eip712_into_request<S: Serialize>(
     domain: EIP712Domain,
@@ -108,17 +133,23 @@ mod tests {
 
     #[test]
     fn test_mail() {
+        _ = pretty_env_logger::try_init();
+
         let domain = json!({
             "name": "Ether Mail",
             "version": "1",
             "chainId": 1,
-            "verifyingContract": "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"
+            "verifyingContract": "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC",
         });
 
         let domain: EIP712Domain = serde_json::from_value(domain).unwrap();
 
+        let type_definitions = eip712_type_definitions(&domain).unwrap();
+
         assert_eq!(
-            eip712_hash_struct(&domain).unwrap().to_eth_hex(),
+            eip712_hash_struct("EIP712Domain", &type_definitions, &domain)
+                .unwrap()
+                .to_eth_hex(),
             "0xf2cee375fa42b42143804025fc449deafd50cc031ca257e0b194a650a912090f"
         );
 
@@ -154,48 +185,16 @@ mod tests {
             eip712_encode_type(&mail).expect("generate e712 types")
         );
 
-        assert_eq!(
-            eip712_hash_struct(&mail.from).unwrap().to_eth_hex(),
-            "0xfc71e5fa27ff56c350aa531bc129ebdf613b772b6604664f5d8dbe21b85eb0c8"
-        );
-
-        assert_eq!(
-            eip712_hash_struct(&mail.to).unwrap().to_eth_hex(),
-            "0xcd54f074a4af31b4411ff6a60c9719dbd559c221c8ac3492d9d872b041d703d1"
-        );
-
-        assert_eq!(
-            eip712_hash_struct(&mail).unwrap().to_eth_hex(),
-            "0xc52c0ee5d84264471806290a3f2c4cecfc5490626bf912d01f240d7a274b371e"
-        );
-
-        assert_eq!(
-			eip712_encode(&domain, &mail).unwrap().to_eth_hex(),
-			"0x1901f2cee375fa42b42143804025fc449deafd50cc031ca257e0b194a650a912090fc52c0ee5d84264471806290a3f2c4cecfc5490626bf912d01f240d7a274b371e"
-		);
-
         let expect_request: TypedData<Mail> =
             serde_json::from_str(include_str!("./eip712.json")).unwrap();
 
         assert_eq!(eip712_into_request(domain, mail).unwrap(), expect_request);
 
-        expect_request.sign_hash().unwrap();
-    }
-
-    #[test]
-    fn test_domain() {
-        let domain = json!({
-            "name": "Ether Mail",
-            "version": "1",
-            "chainId": 1,
-            "verifyingContract": "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"
-        });
-
-        let domain: EIP712Domain = serde_json::from_value(domain).unwrap();
-
         assert_eq!(
-            eip712_hash_struct(&domain).unwrap().to_eth_hex(),
-            "0xf2cee375fa42b42143804025fc449deafd50cc031ca257e0b194a650a912090f"
+            expect_request.sign_hash().unwrap().to_eth_hex(),
+            "0xbe609aee343fb3c4b28e1df9e632fca64fcfaede20f02e86244efddf30957bd2"
         );
+
+        expect_request.sign_hash().unwrap();
     }
 }

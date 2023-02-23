@@ -22,3 +22,4 @@ serde_eip712 = { workspace = true }
 
 [dev-dependencies]
 serde_json = { workspace = true }
+pretty_env_logger = { workspace = true }
