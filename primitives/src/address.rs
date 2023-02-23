@@ -32,6 +32,10 @@ pub enum AddressError {
 
     #[error("{0}")]
     FromHexError(#[from] FromHexError),
+
+    #[cfg(feature = "rust_crypto")]
+    #[error("{0}")]
+    EllipticCurve(#[from] k256::elliptic_curve::Error),
 }
 
 /// Ethereum address type in binary bytes with format [`rlp`](crate::rlp) and format [`abi`](crate::abi) supports
@@ -169,6 +173,13 @@ impl From<PublicKey> for Address {
 #[cfg(feature = "rust_crypto")]
 impl From<SecretKey> for Address {
     fn from(value: SecretKey) -> Self {
+        Address::from(&value)
+    }
+}
+
+#[cfg(feature = "rust_crypto")]
+impl From<&SecretKey> for Address {
+    fn from(value: &SecretKey) -> Self {
         let value = value.public_key();
         let buff = value.to_encoded_point(false);
 

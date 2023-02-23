@@ -138,7 +138,7 @@ impl<'de> de::Visitor<'de> for BytesVisitor {
 }
 
 /// Type mapping for `bytes` of contract abi
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq, Clone, Eq)]
 pub struct Bytes(pub Vec<u8>);
 
 impl Display for Bytes {

@@ -1,0 +1,58 @@
+[package]
+name = "ethers-wallet"
+license-file.workspace = true
+edition.workspace = true
+version.workspace = true
+description = "Ethereum local wallet implemenation"
+documentation = "https://docs.rs/ethers-wallet"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+log = { workspace = true }
+thiserror = { workspace = true }
+regex = { workspace = true }
+once_cell = { workspace = true }
+
+serde = { workspace = true }
+serde_json = { workspace = true }
+num = { workspace = true }
+rand = { workspace = true }
+uuid = { workspace = true }
+anyhow = { workspace = true }
+
+# rust_crypto
+k256 = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }
+hmac = { workspace = true, optional = true }
+scrypt = { workspace = true, optional = true }
+aes = { workspace = true, optional = true }
+ctr = { workspace = true, optional = true }
+digest = { workspace = true, optional = true }
+sha3 = { workspace = true, optional = true }
+pbkdf2 = { version = "^0.11", optional = true }
+
+#internals
+ethers-primitives = { workspace = true }
+
+[dev-dependencies]
+pretty_env_logger = { workspace = true }
+rdbc_sqlite3 = { git = "https://github.com/linq-rs/rdbc-sqlite3.git" }
+rdbc = { git = "https://github.com/linq-rs/rdbc.git" }
+async-std = { workspace = true }
+
+
+[features]
+default = ["rust_crypto"]
+rust_crypto = [
+    "k256",
+    "digest",
+    "sha2",
+    "sha3",
+    "hmac",
+    "scrypt",
+    "ctr",
+    "aes",
+    "pbkdf2",
+]
+openssl = []
