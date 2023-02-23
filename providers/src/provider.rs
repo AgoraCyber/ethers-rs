@@ -49,7 +49,7 @@ mod tests {
     use jsonrpc_rs::RPCResult;
     use serde_json::json;
 
-    use crate::providers::http;
+    use crate::impls::http;
 
     #[async_std::test]
     async fn test_block_number() -> RPCResult<()> {

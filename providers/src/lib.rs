@@ -6,4 +6,11 @@ pub use provider::*;
 mod types;
 pub use types::*;
 
-pub mod providers;
+mod impls;
+
+/// Reexport impls as providers mod
+pub mod providers {
+    use super::impls;
+
+    pub use impls::*;
+}
