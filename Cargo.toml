@@ -6,7 +6,7 @@ members = [
     "primitives",
     "eip712",
     "providers",
-    "txrequest",
+    "eip2718",
 ]
 
 [workspace.package]
@@ -76,7 +76,7 @@ serde_rlp = { path = "./serde/rlp", version = "^0.2" }
 ethers-primitives = { path = "./primitives", version = "^0.2" }
 ethers-provider = { path = "./providers", version = "^0.2" }
 ethers-eip712 = { path = "./eip712", version = "^0.2" }
-ethers-txrequest = { path = "./txrequest", version = "^0.2" }
+ethers-eip2718 = { path = "./eip2718", version = "^0.2" }
 
 
 jsonrpc-rs = "^0.1"

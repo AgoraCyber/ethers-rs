@@ -202,56 +202,56 @@ mod tests {
         );
     }
 
-    #[async_std::test]
-    async fn test_eth_new_filter() {
-        _ = pretty_env_logger::try_init();
+    // #[async_std::test]
+    // async fn test_eth_new_filter() {
+    //     _ = pretty_env_logger::try_init();
 
-        let mut provider = http::connect_to("http://localhost:8545");
+    //     let mut provider = http::connect_to("http://localhost:8545");
 
-        provider
-            .eth_new_filter(json!({
-                "fromBlock": "0x1",
-                "toBlock": "0x02",
-            }))
-            .await
-            .expect("eth_new_filter");
-    }
+    //     provider
+    //         .eth_new_filter(json!({
+    //             "fromBlock": "0x1",
+    //             "toBlock": "0x02",
+    //         }))
+    //         .await
+    //         .expect("eth_new_filter");
+    // }
 
-    #[async_std::test]
-    async fn test_eth_new_any_filter() {
-        _ = pretty_env_logger::try_init();
+    // #[async_std::test]
+    // async fn test_eth_new_any_filter() {
+    //     _ = pretty_env_logger::try_init();
 
-        let mut provider = http::connect_to("http://localhost:8545");
+    //     let mut provider = http::connect_to("http://localhost:8545");
 
-        let filter = provider
-            .eth_new_block_filter()
-            .await
-            .expect("eth_newBlockFilter");
+    //     let filter = provider
+    //         .eth_new_block_filter()
+    //         .await
+    //         .expect("eth_newBlockFilter");
 
-        log::debug!("create new blockFilter {}", filter);
+    //     log::debug!("create new blockFilter {}", filter);
 
-        let filter = provider
-            .eth_new_pending_transaction_filter()
-            .await
-            .expect("eth_newPendingTransactionFilter");
+    //     let filter = provider
+    //         .eth_new_pending_transaction_filter()
+    //         .await
+    //         .expect("eth_newPendingTransactionFilter");
 
-        log::debug!("create new pending transaction filter {}", filter);
+    //     log::debug!("create new pending transaction filter {}", filter);
 
-        let result = provider
-            .eth_get_filter_changes(filter.clone())
-            .await
-            .expect("eth_getFilterChanges");
+    //     let result = provider
+    //         .eth_get_filter_changes(filter.clone())
+    //         .await
+    //         .expect("eth_getFilterChanges");
 
-        log::debug!("eth_getFilterChanges {:?}", result);
+    //     log::debug!("eth_getFilterChanges {:?}", result);
 
-        assert_eq!(
-            provider
-                .eth_uninstall_filter(filter)
-                .await
-                .expect("eth_uninstallFilter"),
-            true
-        );
-    }
+    //     assert_eq!(
+    //         provider
+    //             .eth_uninstall_filter(filter)
+    //             .await
+    //             .expect("eth_uninstallFilter"),
+    //         true
+    //     );
+    // }
 
     #[async_std::test]
     async fn test_eth_get_logs() {

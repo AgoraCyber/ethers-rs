@@ -2,7 +2,7 @@ use super::Provider;
 
 use std::fmt::{Debug, Display};
 
-use ethers_txrequest::TypedTransactionRequest;
+use ethers_eip2718::TypedTransactionRequest;
 use jsonrpc_rs::RPCResult;
 
 use crate::types::*;

@@ -1,10 +1,10 @@
 [package]
-name = "ethers-txrequest"
+name = "ethers-eip2718"
 license = "MIT"
 edition.workspace = true
 version.workspace = true
-description = "Typed ethereum transaction request types for rust"
-documentation = "https://docs.rs/ethers-txrequest"
+description = "EIP2718 implementation for ethers-rs"
+documentation = "https://docs.rs/ethers-eip2718"
 
 [dependencies]
 # serde

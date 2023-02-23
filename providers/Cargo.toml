@@ -18,7 +18,7 @@ serde_json = { workspace = true }
 
 # internals
 ethers-primitives = { workspace = true }
-ethers-txrequest = { workspace = true }
+ethers-eip2718 = { workspace = true }
 
 # agora
 jsonrpc-rs = { workspace = true }

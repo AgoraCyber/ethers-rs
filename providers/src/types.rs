@@ -3,7 +3,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use crate::error::ProviderError;
 
-pub use ethers_txrequest::AccessList;
+pub use ethers_eip2718::AccessList;
 
 /// Hash with 256 bits length.
 pub type H256 = Bytes32;
@@ -343,7 +343,7 @@ pub struct Block {
     /// Bloom filter
     #[serde(rename = "logsBloom")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub logs_bloom: Option<Bytes32>,
+    pub logs_bloom: Option<Bytes>,
 
     /// Difficulty
     #[serde(skip_serializing_if = "Option::is_none")]
