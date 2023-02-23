@@ -13,8 +13,8 @@ pub trait ToEtherHex {
 impl<T: ToHex> ToEtherHex for T {
     fn to_eth_hex(&self) -> String {
         let hex_str = self.encode_hex::<String>();
-        if hex_str == "00" {
-            "0x0".to_owned()
+        if hex_str.len() == 2 && hex_str.as_bytes()[0] == b'0' {
+            format!("0x{}", hex_str.as_bytes()[1])
         } else {
             format!("0x{}", hex_str)
         }

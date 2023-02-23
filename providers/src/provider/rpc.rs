@@ -287,7 +287,7 @@ impl Provider {
 
     /// Polling method for a filter, which returns an arrya of logs which occurred since last poll
 
-    pub async fn eth_get_filter_changes<N>(&mut self, id: N) -> RPCResult<FilterEvents>
+    pub async fn eth_get_filter_changes<N>(&mut self, id: N) -> RPCResult<Option<FilterEvents>>
     where
         N: TryInto<U256>,
         N::Error: Debug + Display,

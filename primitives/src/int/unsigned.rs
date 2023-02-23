@@ -1,5 +1,9 @@
-use std::ops::{Add, Mul, Sub};
+use std::{
+    fmt::Display,
+    ops::{Add, Mul, Sub},
+};
 
+use hex::FromHexError;
 use num::{bigint::ToBigUint, BigUint, FromPrimitive, ToPrimitive, Unsigned};
 use serde::{de, Deserialize, Serialize};
 
@@ -16,6 +20,8 @@ pub enum UintError {
 
     #[error("ToBigUnit: {0}")]
     ToBigUnit(String),
+    #[error("FromHex: {0}")]
+    FromHex(#[from] FromHexError),
 }
 
 /// unit<M> type mapping
@@ -53,12 +59,43 @@ impl<const BITS: usize> Uint<BITS> {
     }
 }
 
+impl<const BITS: usize> Display for Uint<BITS> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", BigUint::from(self))
+    }
+}
+
+impl<const BITS: usize> TryFrom<&str> for Uint<BITS> {
+    type Error = UintError;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let value = Vec::<u8>::from_eth_hex(value)?;
+
+        let value = BigUint::from_bytes_be(&value);
+
+        if value.bits() as usize > BITS {
+            return Err(UintError::OutOfRange(format!(
+                "{} convert to uint<{}> failed",
+                value, BITS
+            )));
+        }
+
+        let value = to_bytes32(value, BITS)?;
+
+        Ok(Uint(value))
+    }
+}
+
 impl<const BITS: usize> From<Uint<BITS>> for BigUint {
     fn from(value: Uint<BITS>) -> Self {
         BigUint::from_bytes_be(&value.0)
     }
 }
 
+impl<const BITS: usize> From<&Uint<BITS>> for BigUint {
+    fn from(value: &Uint<BITS>) -> Self {
+        BigUint::from_bytes_be(&value.0)
+    }
+}
 impl<const BITS: usize> Sub for Uint<BITS> {
     type Output = Uint<BITS>;
 
@@ -150,21 +187,7 @@ impl<'de, const BITS: usize> de::Visitor<'de> for UintVisitor<BITS> {
     where
         E: de::Error,
     {
-        let value = Vec::<u8>::from_eth_hex(v).map_err(de::Error::custom)?;
-
-        let value = BigUint::from_bytes_be(&value);
-
-        if value.bits() as usize > BITS {
-            return Err(UintError::OutOfRange(format!(
-                "{} convert to uint<{}> failed",
-                value, BITS
-            )))
-            .map_err(de::Error::custom);
-        }
-
-        let value = to_bytes32(value, BITS).map_err(de::Error::custom)?;
-
-        Ok(Uint(value))
+        Uint::<BITS>::try_from(v).map_err(de::Error::custom)
     }
 
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>

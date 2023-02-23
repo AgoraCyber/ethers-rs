@@ -1,5 +1,9 @@
-use std::ops::{Add, Mul, Sub};
+use std::{
+    fmt::Display,
+    ops::{Add, Mul, Sub},
+};
 
+use hex::FromHexError;
 use num::{bigint::ToBigInt, BigInt, FromPrimitive, Signed, ToPrimitive};
 use serde::{de, Deserialize, Serialize};
 
@@ -16,6 +20,8 @@ pub enum SignedError {
 
     #[error("ToBigUnit: {0}")]
     ToBigUnit(String),
+    #[error("FromHex: {0}")]
+    FromHex(#[from] FromHexError),
 }
 
 /// unit<M> type mapping
@@ -54,6 +60,38 @@ impl<const BITS: usize> Int<BITS> {
                 "convert input into BigUnit failed".to_owned(),
             ))
         }
+    }
+}
+
+impl<const BITS: usize> Display for Int<BITS> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", BigInt::from(self))
+    }
+}
+
+impl<const BITS: usize> TryFrom<&str> for Int<BITS> {
+    type Error = SignedError;
+    fn try_from(v: &str) -> Result<Self, Self::Error> {
+        let value = Vec::<u8>::from_eth_hex(v)?;
+
+        let lead_ones = value.iter().take_while(|c| **c == 0xff).count();
+
+        if value.len() - lead_ones + 1 > BITS / 8 {
+            return Err(SignedError::OutOfRange(format!(
+                "{} convert to int<{}> failed",
+                v, BITS
+            )));
+        }
+
+        let mut buff = if lead_ones > 0 {
+            [0xffu8; 32]
+        } else {
+            [0x0u8; 32]
+        };
+
+        buff[(32 - (value.len() - lead_ones))..].copy_from_slice(&value[lead_ones..]);
+
+        Ok(Int(buff))
     }
 }
 
@@ -166,27 +204,7 @@ impl<'de, const BITS: usize> de::Visitor<'de> for IntVisitor<BITS> {
     where
         E: de::Error,
     {
-        let value = Vec::<u8>::from_eth_hex(v).map_err(de::Error::custom)?;
-
-        let lead_ones = value.iter().take_while(|c| **c == 0xff).count();
-
-        if value.len() - lead_ones + 1 > BITS / 8 {
-            return Err(SignedError::OutOfRange(format!(
-                "{} convert to int<{}> failed",
-                v, BITS
-            )))
-            .map_err(de::Error::custom);
-        }
-
-        let mut buff = if lead_ones > 0 {
-            [0xffu8; 32]
-        } else {
-            [0x0u8; 32]
-        };
-
-        buff[(32 - (value.len() - lead_ones))..].copy_from_slice(&value[lead_ones..]);
-
-        Ok(Int(buff))
+        Int::<BITS>::try_from(v).map_err(de::Error::custom)
     }
 
     fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>

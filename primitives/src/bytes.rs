@@ -4,6 +4,7 @@ use std::fmt::Display;
 
 use crate::hex::{FromEtherHex, ToEtherHex};
 
+use hex::FromHexError;
 // use concat_idents::concat_idents;
 use serde::{de, Deserialize, Serialize};
 use thiserror::Error;
@@ -12,6 +13,9 @@ use thiserror::Error;
 pub enum BytesErrors {
     #[error("Inputs data is out of bytes<M> range ")]
     BytesMOutOfRange,
+
+    #[error("{0}")]
+    FromHexError(#[from] FromHexError),
 }
 
 /// Type mapping for `bytes<M>` of contract abi
@@ -21,6 +25,23 @@ pub struct BytesM<const LEN: usize>(pub [u8; 32]);
 impl<const LEN: usize> Display for BytesM<LEN> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0.to_eth_hex())
+    }
+}
+
+impl<const LEN: usize> TryFrom<&str> for BytesM<LEN> {
+    type Error = BytesErrors;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        let buff = Vec::<u8>::from_eth_hex(value)?;
+
+        if buff.len() > 32 {
+            return Err(BytesErrors::BytesMOutOfRange);
+        }
+
+        let mut temp = [0u8; 32];
+
+        temp[..LEN].copy_from_slice(&buff[..LEN]);
+
+        Ok(Self(temp))
     }
 }
 
@@ -123,6 +144,13 @@ pub struct Bytes(pub Vec<u8>);
 impl Display for Bytes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.0.to_eth_hex())
+    }
+}
+
+impl TryFrom<&str> for Bytes {
+    type Error = BytesErrors;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Ok(Self(Vec::<u8>::from_eth_hex(value)?))
     }
 }
 

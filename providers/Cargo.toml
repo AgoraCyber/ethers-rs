@@ -20,17 +20,21 @@ serde_json = { workspace = true }
 ethers-primitives = { workspace = true }
 ethers-txrequest = { workspace = true }
 
-
+# agora
 jsonrpc-rs = { workspace = true }
 async-timer-rs = { workspace = true }
 completeq-rs = { workspace = true }
 
-
-futures = { workspace = true }
-
+# others
 once_cell = { workspace = true }
-
 log = { workspace = true }
+
+
+# async
+futures = { workspace = true }
+tokio-tungstenite = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true }
 
 [dev-dependencies]
 pretty_env_logger = { workspace = true }

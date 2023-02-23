@@ -2,6 +2,9 @@
 //!
 //!
 
+use std::fmt::Display;
+
+use hex::FromHexError;
 #[cfg(feature = "rust_crypto")]
 use k256::elliptic_curve::sec1::ToEncodedPoint;
 #[cfg(feature = "rust_crypto")]
@@ -26,6 +29,9 @@ pub enum AddressError {
 
     #[error("Eip155 format check failed,{0}")]
     Eip155(String),
+
+    #[error("{0}")]
+    FromHexError(#[from] FromHexError),
 }
 
 /// Ethereum address type in binary bytes with format [`rlp`](crate::rlp) and format [`abi`](crate::abi) supports
@@ -81,13 +87,26 @@ impl<'de> Deserialize<'de> for Address {
     }
 }
 
+impl Display for Address {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.to_checksum_string())
+    }
+}
+
+impl TryFrom<&str> for Address {
+    type Error = AddressError;
+    fn try_from(value: &str) -> Result<Self, Self::Error> {
+        Address::from_str(value, false)
+    }
+}
+
 /// Eip55 support trait
 pub trait Eip55: Sized {
     /// Convert address to eip55 string
     fn to_checksum_string(&self) -> String;
 
     /// Load address from string and make a eip55 checksum comparison
-    fn from_str(source: &str, checksum: bool) -> anyhow::Result<Self>;
+    fn from_str(source: &str, checksum: bool) -> Result<Self, AddressError>;
 }
 
 impl Eip55 for Address {
@@ -112,7 +131,7 @@ impl Eip55 for Address {
         data
     }
 
-    fn from_str(source: &str, checksum: bool) -> anyhow::Result<Self> {
+    fn from_str(source: &str, checksum: bool) -> Result<Self, AddressError> {
         let buff = Vec::<u8>::from_eth_hex(source)?;
 
         if buff.len() != 20 {
@@ -125,7 +144,7 @@ impl Eip55 for Address {
             let expected = address.to_checksum_string();
 
             if expected != source {
-                return Err(AddressError::Eip155(source.to_owned()).into());
+                return Err(AddressError::Eip155(source.to_owned()));
             }
         }
 
