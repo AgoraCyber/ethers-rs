@@ -3,7 +3,7 @@
 
 use ethers_primitives::FromEtherHex;
 
-use crate::Result;
+use crate::{hd_wallet::bip32::DriveKey, Result};
 
 #[cfg(feature = "rust_crypto")]
 mod rust_crypto;
@@ -40,6 +40,12 @@ impl KeyProvider for Vec<u8> {
 impl<const LEN: usize> KeyProvider for [u8; LEN] {
     fn load(&self) -> Result<Vec<u8>> {
         Ok(self.to_vec())
+    }
+}
+
+impl KeyProvider for DriveKey {
+    fn load(&self) -> Result<Vec<u8>> {
+        Ok(self.private_key.to_be_bytes().to_vec())
     }
 }
 

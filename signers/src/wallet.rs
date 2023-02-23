@@ -246,6 +246,14 @@ mod tests {
     async fn test_sign_eip712() {
         _ = pretty_env_logger::try_init();
 
+        let wallet =
+            Wallet::new("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
+                .expect("Create hardhat account 0 wallet");
+
+        let mut signer = wallet
+            .try_into_signer()
+            .expect("Try convert wallet into signer");
+
         #[derive(Debug, Serialize, Deserialize, PartialEq)]
         struct Person {
             pub name: String,
@@ -260,14 +268,6 @@ mod tests {
         }
 
         let mail: TypedData<Mail> = serde_json::from_str(include_str!("./eip712.json")).unwrap();
-
-        let wallet =
-            Wallet::new("0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80")
-                .expect("Create hardhat account 0 wallet");
-
-        let mut signer = wallet
-            .try_into_signer()
-            .expect("Try convert wallet into signer");
 
         let signature = signer
             .sign_typed_data(mail)

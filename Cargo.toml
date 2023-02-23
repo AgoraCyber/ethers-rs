@@ -9,6 +9,7 @@ members = [
     "eip2718",
     "wallet",
     "signers",
+    "hardhat",
 ]
 
 [workspace.package]
@@ -77,7 +78,7 @@ serde_ethabi = { path = "./serde/ethabi", version = "^0.2" }
 serde_eip712 = { path = "./serde/eip712", version = "^0.2" }
 serde_rlp = { path = "./serde/rlp", version = "^0.2" }
 ethers_primitives = { path = "./primitives", version = "^0.2" }
-ethers_provider = { path = "./providers", version = "^0.2" }
+ethers_providers = { path = "./providers", version = "^0.2" }
 ethers_eip712 = { path = "./eip712", version = "^0.2" }
 ethers_eip2718 = { path = "./eip2718", version = "^0.2" }
 ethers_wallet = { path = "./wallet", version = "^0.2" }
@@ -107,3 +108,4 @@ aes = { version = "0.8.2" }
 ctr = { version = "0.9.2" }
 digest = { version = "0.10.6" }
 pbkdf2 = { version = "^0.11" }
+async-process = "^1.6.0"
