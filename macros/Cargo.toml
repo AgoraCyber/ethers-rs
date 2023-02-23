@@ -1,0 +1,22 @@
+[package]
+name = "ethers_macros"
+license-file.workspace = true
+edition.workspace = true
+version.workspace = true
+description = "Contract code generator using proc-macro"
+documentation = "https://docs.rs/ethers_macros"
+
+
+[lib]
+proc-macro = true
+
+[dependencies]
+heck = "0.4"
+syn = { version = "^1", features = ["full"] }
+quote = "^1"
+proc-macro2 = "^1"
+
+ethbind = { workspace = true }
+
+[dev-dependencies]
+anyhow = { workspace = true }

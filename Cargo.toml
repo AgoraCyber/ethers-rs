@@ -1,3 +1,24 @@
+[package]
+name = "ethers-rs"
+license-file.workspace = true
+edition.workspace = true
+version.workspace = true
+description = "An ethereum contract binding code generation framework"
+documentation = "https://docs.rs/ethers-rs"
+
+[dependencies]
+serde_ethabi = { workspace = true }
+serde_eip712 = { workspace = true }
+serde_rlp = { workspace = true }
+ethers_primitives = { workspace = true }
+ethers_providers = { workspace = true }
+ethers_eip712 = { workspace = true }
+ethers_eip2718 = { workspace = true }
+ethers_wallet = { workspace = true }
+ethers_signers = { workspace = true }
+ethers_macros = { workspace = true }
+
+
 [workspace]
 members = [
     "serde/ethabi",
@@ -10,6 +31,8 @@ members = [
     "wallet",
     "signers",
     "hardhat",
+    "macros",
+    "./",
 ]
 
 [workspace.package]
@@ -83,6 +106,7 @@ ethers_eip712 = { path = "./eip712", version = "^0.2" }
 ethers_eip2718 = { path = "./eip2718", version = "^0.2" }
 ethers_wallet = { path = "./wallet", version = "^0.2" }
 ethers_signers = { path = "./signers", version = "^0.2" }
+ethers_macros = { path = "./macros", version = "^0.2" }
 
 
 jsonrpc-rs = "^0.1"
