@@ -16,3 +16,6 @@ mod sig;
 pub use sig::*;
 
 pub type H256 = Bytes32;
+
+mod fixed;
+pub use fixed::*;

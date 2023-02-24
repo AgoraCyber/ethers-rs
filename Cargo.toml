@@ -1,5 +1,5 @@
 [package]
-name = "ethers-rs"
+name = "ethers_rs"
 license-file.workspace = true
 edition.workspace = true
 version.workspace = true
@@ -17,7 +17,8 @@ ethers_eip2718 = { workspace = true }
 ethers_wallet = { workspace = true }
 ethers_signers = { workspace = true }
 ethers_macros = { workspace = true }
-
+serde = { workspace = true }
+anyhow = { workspace = true }
 
 [workspace]
 members = [
@@ -32,6 +33,7 @@ members = [
     "signers",
     "hardhat",
     "macros",
+    "example",
     "./",
 ]
 
@@ -107,6 +109,7 @@ ethers_eip2718 = { path = "./eip2718", version = "^0.2" }
 ethers_wallet = { path = "./wallet", version = "^0.2" }
 ethers_signers = { path = "./signers", version = "^0.2" }
 ethers_macros = { path = "./macros", version = "^0.2" }
+ethers_rs = { path = "./", version = "^0.2" }
 
 
 jsonrpc-rs = "^0.1"

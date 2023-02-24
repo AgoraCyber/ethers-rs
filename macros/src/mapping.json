@@ -1,0 +1,22 @@
+{
+  "bytes": "ethers_rs::Bytes",
+  "bool": "bool",
+  "uint_m": "ethers_rs::Uint<$m>",
+  "int_m": "ethers_rs::Int<$m>",
+  "fixed_m_n": "ethers_rs::Fixed<$m,$n>",
+  "ufixed_m_n": "ethers_rs::Unfixed<$m,$n>",
+  "array_m": "[$el;$m]",
+  "array": "Vec<$el>",
+  "bytes_m": "ethers_rs::BytesM<$m>",
+  "address": "ethers_rs::Address",
+  "rt_client": "ethers_rs::Client",
+  "rt_error": "ethers_rs::Error",
+  "rt_opts": "ethers_rs::Ops",
+  "rt_receipt": "ethers_rs::TransactionReceipt",
+  "rt_abi_decodable": "ethers_rs::Deserialize",
+  "rt_abi_encodable": "ethers_rs::Serialize",
+  "rt_log_decodable": "ethers_rs::Deserialize",
+  "rt_log_decoder": "ethers_rs::LogDecoder",
+  "rt_log_encodable": "ethers_rs::Serialize",
+  "rt_log_encoder": "ethers_rs::LogEncoder"
+}

@@ -7,29 +7,23 @@ use quote::quote;
 use syn::{parse::Parse, parse_macro_input, LitStr, Token};
 
 struct Contract {
-    pub contract_name: Option<String>,
-    pub type_mapping: String,
-    pub abi_data: String,
+    pub contract_name: String,
+    pub abi_data_path: Option<String>,
 }
 
 impl Parse for Contract {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let contract_name: Option<Ident> = input.parse()?;
+        let contract_name: Ident = input.parse()?;
 
-        if contract_name.is_some() {
-            input.parse::<Token!(,)>()?;
-        }
-
-        let type_mapping: LitStr = input.parse()?;
-
-        input.parse::<Token!(,)>()?;
-
-        let abi_data: LitStr = input.parse()?;
+        let abi_data_path = if input.parse::<Option<Token!(,)>>()?.is_some() {
+            Some(input.parse::<LitStr>()?.value())
+        } else {
+            None
+        };
 
         Ok(Self {
-            contract_name: contract_name.map(|c| c.to_string()),
-            type_mapping: type_mapping.value(),
-            abi_data: abi_data.value(),
+            contract_name: contract_name.to_string(),
+            abi_data_path,
         })
     }
 }
@@ -47,26 +41,26 @@ fn load_json_file(path: &str) -> String {
 }
 
 #[proc_macro]
-pub fn contract(item: TokenStream) -> TokenStream {
+pub fn hardhat(item: TokenStream) -> TokenStream {
     let contract = parse_macro_input!(item as Contract);
 
-    let type_mapping: JsonRuntimeBinder = load_json_file(&contract.type_mapping)
+    let type_mapping: JsonRuntimeBinder = include_str!("./mapping.json")
         .parse()
-        .expect("Parse mapping data");
+        .expect("Parse mapping.json");
 
-    let abi_data = load_json_file(&contract.abi_data);
-
-    let generator = if let Some(contract_name) = contract.contract_name {
-        BindingBuilder::new((RustGenerator::default(), type_mapping))
-            .bind(&contract_name, abi_data)
-            .finalize()
-            .expect("Generate contract/abi binding code")
+    let abi_data = if let Some(abi_data_path) = contract.abi_data_path {
+        load_json_file(&abi_data_path)
     } else {
-        BindingBuilder::new((RustGenerator::default(), type_mapping))
-            .bind_hardhat(abi_data)
-            .finalize()
-            .expect("Generate contract/abi binding code")
+        load_json_file(&format!(
+            "sol/artifacts/contracts/{}.sol/{}.json",
+            &contract.contract_name, &contract.contract_name
+        ))
     };
+
+    let generator = BindingBuilder::new((RustGenerator::default(), type_mapping))
+        .bind_hardhat(abi_data)
+        .finalize()
+        .expect("Generate contract/abi binding code");
 
     let contracts = generator.to_token_streams().expect("To token streams");
 
