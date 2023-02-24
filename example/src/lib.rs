@@ -1,6 +1,6 @@
 use ethers_rs::hardhat;
 
-hardhat!(Lock);
+hardhat!(Example);
 
 #[cfg(test)]
 mod tests {
@@ -13,7 +13,7 @@ mod tests {
     use super::*;
 
     #[async_std::test]
-    async fn test_lock() {
+    async fn test_deploy() {
         _ = pretty_env_logger::try_init();
 
         let mut network = hardhat_network!();
@@ -29,7 +29,7 @@ mod tests {
         let client: Client = (provider.clone(), s0).into();
 
         // Deploy contract and send ether to deployed
-        let lock = Lock::deploy_with(client.clone(), value.clone().to_tx_options())
+        let lock = Example::deploy_with(client.clone(), value.clone().to_tx_options())
             .await
             .expect("Deploy lock contract");
 
@@ -56,10 +56,23 @@ mod tests {
         assert_eq!(balance + value.to_u256() - used, balance_after);
 
         let data = lock
-            .from((100usize.into(), 200usize.into()))
+            .get_from((100usize.into(), 200usize.into()))
             .await
             .expect("call from pure method");
 
         assert_eq!(data, 100usize.into());
+
+        let data = lock
+            .get_to((100usize.into(), 300usize.into()))
+            .await
+            .expect("call from pure method");
+
+        assert_eq!(data, 300usize.into());
+
+        let (from, to) = lock.get().await.expect("call from pure method");
+
+        assert_eq!(from, 1000usize.into());
+
+        assert_eq!(to, 140u128.into());
     }
 }

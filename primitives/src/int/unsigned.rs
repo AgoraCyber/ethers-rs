@@ -369,5 +369,11 @@ mod tests {
         let data: Vec<U256> = serde_json::from_value(json!(["0x1"])).unwrap();
 
         assert_eq!(json!(["0x1"]), serde_json::to_value(&data).unwrap());
+
+        let data = U256::from(100usize);
+
+        let result: U256 = serde_json::from_str(&serde_json::to_string(&data).unwrap()).unwrap();
+
+        assert_eq!(data, result);
     }
 }

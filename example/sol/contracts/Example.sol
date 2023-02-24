@@ -4,7 +4,7 @@ pragma solidity ^0.8.9;
 // Uncomment this line to use console.log
 // import "hardhat/console.sol";
 
-contract Lock {
+contract Example {
     address payable public owner;
 
     event Withdrawal(uint amount, uint when);
@@ -29,7 +29,15 @@ contract Lock {
         owner.transfer(address(this).balance);
     }
 
-    function from(Data memory data) public pure returns (uint256) {
+    function get_from(Data memory data) public pure returns (uint256) {
         return data.from;
+    }
+
+    function get_to(Data memory data) public pure returns (uint256) {
+        return data.to;
+    }
+
+    function get() public pure returns (Data memory) {
+        return Data(1000, 140);
     }
 }
