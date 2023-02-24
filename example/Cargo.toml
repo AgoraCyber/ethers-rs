@@ -7,11 +7,11 @@ publish = ["rsproxy"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ethers_rs = { workspace = true }
+ethers-rs = { workspace = true }
 serde = { workspace = true }
 async-std = { workspace = true }
 pretty_env_logger = { workspace = true }
 log = { workspace = true }
 
 [build-dependencies]
-ethers_rs = { workspace = true }
+ethers-rs = { workspace = true }

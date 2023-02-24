@@ -1,5 +1,5 @@
 [package]
-name = "ethers_rs"
+name = "ethers-rs"
 license-file.workspace = true
 edition.workspace = true
 version.workspace = true
@@ -117,8 +117,8 @@ ethers_eip2718 = { path = "./eip2718", version = "^0.2" }
 ethers_wallet = { path = "./wallet", version = "^0.2" }
 ethers_signer = { path = "./signers", version = "^0.2" }
 ethers_macros = { path = "./macros", version = "^0.2" }
-ethers_rs = { path = "./", version = "^0.2" }
 ethers_hardhat = { path = "./hardhat", version = "^0.2" }
+ethers-rs = { path = "./", version = "^0.2" }
 
 jsonrpc-rs = "^0.1"
 async-timer-rs = "^0.1"
