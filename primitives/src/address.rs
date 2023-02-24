@@ -38,7 +38,7 @@ pub enum AddressError {
     EllipticCurve(#[from] k256::elliptic_curve::Error),
 }
 
-/// Ethereum address type in binary bytes with format [`rlp`](crate::rlp) and format [`abi`](crate::abi) supports
+/// Ethereum address type in binary bytes with format [`rlp`](serde_rlp) and format [`abi`](serde_ethabi) supports
 #[derive(Debug, PartialEq, Clone, Copy, Eq, Hash, Default)]
 pub struct Address(
     /// Ethereum address's length is 20 in bytes

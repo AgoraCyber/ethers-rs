@@ -24,7 +24,7 @@ pub enum UintError {
     FromHex(#[from] FromHexError),
 }
 
-/// unit<M> type mapping
+/// `uint<M>` type mapping
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Default)]
 pub struct Uint<const BITS: usize>(pub [u8; 32]);
 
@@ -123,7 +123,7 @@ impl<const BITS: usize> Mul for Uint<BITS> {
     type Output = Uint<BITS>;
 
     fn mul(self, rhs: Self) -> Self::Output {
-        Self::new(BigUint::from(self) + BigUint::from(rhs)).unwrap()
+        Self::new(BigUint::from(self) * BigUint::from(rhs)).unwrap()
     }
 }
 

@@ -294,7 +294,7 @@ pub struct TransactionReceipt {
     /// Logs
     pub logs: Vec<Log>,
     /// Logs bloom filter string
-    pub logs_bloom: Bytes32,
+    pub logs_bloom: Bytes,
     /// Only include before the Byzantium upgrade
     pub root: Option<H256>,
 }

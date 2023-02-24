@@ -1,4 +1,4 @@
-//! Contract abi bytes<M> and bytes type support. those types can aslo be used with eip715 or tx signature.
+//! Contract abi `bytes<M>` and bytes type support. those types can aslo be used with eip715 or tx signature.
 
 use std::fmt::Display;
 

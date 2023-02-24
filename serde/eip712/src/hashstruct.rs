@@ -231,7 +231,7 @@ impl<'a> EIP712StructHasher<'a> {
             .into())
     }
 
-    /// Start encode tuple(e.g, <Type>[5], Structure)
+    /// Start encode tuple(e.g, `<Type>[5]`, Structure)
     pub fn start_tuple(&mut self) -> Result<(), EncodeDataError> {
         self.tuple_stack.push(TupleEncoder {
             ..Default::default()

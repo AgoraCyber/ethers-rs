@@ -77,7 +77,7 @@ macro_rules! def_eth_unit {
         impl FromStr for $name {
             type Err = anyhow::Error;
             fn from_str(s: &str) -> Result<Self, Self::Err> {
-                let v: f64 = s.parse()?;
+                let v: f64 = s.trim_end_matches(stringify!($name)).parse()?;
 
                 let v =
                     BigRational::from_float(v).ok_or(UnitError::ParseFloatString(s.to_owned()))?;
@@ -132,7 +132,7 @@ macro_rules! def_eth_unit {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 let s: String = String::from(self.clone());
 
-                write!(f, "{}", s)
+                write!(f, "{} {}", s, stringify!($name))
             }
         }
     };

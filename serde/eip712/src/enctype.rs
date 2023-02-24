@@ -550,7 +550,7 @@ impl<'a> ser::SerializeTupleStruct for &'a mut EIP712TypeEncoder {
     }
 }
 
-/// Convert [`serializable`] value to eip712 encode type.
+/// Convert [`Serialize`] value to eip712 encode type.
 pub fn eip712_encode_type<S: Serialize>(value: &S) -> Result<String, EncodeTypeError> {
     let mut serializer = EIP712TypeEncoder::default();
 

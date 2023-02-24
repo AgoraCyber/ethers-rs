@@ -132,6 +132,8 @@ where
     {
         let hardhat_root: PathBuf = hardhat_root.into();
 
+        log::debug!("hardhat start in directory: {:?}", hardhat_root);
+
         let mut command = hardhat_command(hardhat_root.clone())?;
 
         C::init_command(hardhat_root.clone(), &mut command)?;

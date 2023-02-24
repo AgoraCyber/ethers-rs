@@ -24,7 +24,7 @@ pub enum SignedError {
     FromHex(#[from] FromHexError),
 }
 
-/// unit<M> type mapping
+/// `int<M>` type mapping
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub struct Int<const BITS: usize>(pub [u8; 32]);
 

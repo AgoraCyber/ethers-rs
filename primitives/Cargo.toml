@@ -8,7 +8,8 @@ documentation = "https://docs.rs/ethers-primitives"
 
 
 [dependencies]
-
+serde_ethabi = { workspace = true }
+serde_rlp = { workspace = true }
 
 # serde
 serde = { workspace = true }
@@ -30,8 +31,6 @@ k256 = { workspace = true, optional = true }
 
 [dev-dependencies]
 # internals
-serde_ethabi = { workspace = true }
-serde_rlp = { workspace = true }
 pretty_env_logger = { workspace = true }
 serde_json = { workspace = true }
 

@@ -546,7 +546,7 @@ pub struct TypeDefinitionField {
     pub r#type: String,
 }
 
-/// Convert [`serializable`] value to eip712 encode type.
+/// Convert [`Serialize`] value to eip712 encode type.
 pub fn eip712_type_definitions<S: Serialize>(
     value: &S,
 ) -> Result<HashMap<String, TypeDefinition>, TypeDefinitionError> {

@@ -36,7 +36,7 @@ impl Display for EventType {
 pub enum EventArg {
     /// Transaction mint event return value [`TransactionReceipt`]
     Transaction(TransactionReceipt),
-    /// `get_ethLogs`/`eth_getFilterLogs` return value [`PollLogs`]
+    /// `get_ethLogs`/`eth_getFilterLogs` returns
     Log(Vec<Log>),
 }
 

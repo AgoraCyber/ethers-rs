@@ -103,7 +103,7 @@ impl Client {
         buff.append(&mut call_data);
 
         let tx_hash = self
-            ._send_raw_transaction(constract_name, None, buff, ops)
+            ._send_raw_transaction(constract_name, None, buff, ops, false)
             .await?;
 
         let receipt = self
@@ -128,17 +128,22 @@ impl Client {
         }
     }
 
+    /// Invoke contract pure/view method without send transaction.
     pub async fn eth_call(
         &self,
         method_name: &str,
         to: &Address,
-        call_data: Vec<u8>,
+        mut call_data: Vec<u8>,
     ) -> anyhow::Result<Vec<u8>> {
         log::debug!("eth_call {}", method_name);
 
         let mut provider = self.provider.clone();
 
-        let call_data: Bytes = call_data.into();
+        let mut selector_name = keccak256(method_name.as_bytes())[0..4].to_vec();
+
+        selector_name.append(&mut call_data);
+
+        let call_data: Bytes = selector_name.into();
 
         let tx: LegacyTransactionRequest = json!({
             "to": to,
@@ -151,6 +156,12 @@ impl Client {
         Ok(result.0)
     }
 
+    /// Send raw transaction contract `to`.
+    ///
+    /// # Parameters
+    ///
+    /// - `to` Contract address
+    /// - `call_data` Transaction [`data`](LegacyTransactionRequest::data) field
     pub async fn send_raw_transaction(
         &self,
         method_name: &str,
@@ -159,7 +170,7 @@ impl Client {
         ops: TxOptions,
     ) -> anyhow::Result<DefaultTransactionReceipter> {
         let tx_hash = self
-            ._send_raw_transaction(method_name, Some(to), call_data, ops)
+            ._send_raw_transaction(method_name, Some(to), call_data, ops, true)
             .await?;
 
         self.provider.register_transaction_listener(tx_hash.clone())
@@ -169,8 +180,9 @@ impl Client {
         &self,
         method_name: &str,
         to: Option<&Address>,
-        call_data: Vec<u8>,
+        mut call_data: Vec<u8>,
         ops: TxOptions,
+        selector: bool,
     ) -> anyhow::Result<H256> {
         let mut provider = self.provider.clone();
 
@@ -203,6 +215,16 @@ impl Client {
         let chain_id = provider.eth_chain_id().await?;
 
         log::debug!(target: method_name, "Fetch chain_id, {}", chain_id);
+
+        let call_data = if selector {
+            let mut selector_name = keccak256(method_name.as_bytes())[0..4].to_vec();
+
+            selector_name.append(&mut call_data);
+
+            selector_name
+        } else {
+            call_data
+        };
 
         let mut tx = LegacyTransactionRequest {
             chain_id: Some(chain_id),
@@ -250,8 +272,22 @@ impl Client {
 
         let hash = provider.eth_send_raw_transaction(signed_tx).await?;
 
-        log::debug!(target: method_name, "Send transaction success, {:#?}", hash);
+        log::debug!(target: method_name, "Send transaction success, {}", hash);
 
         Ok(hash)
+    }
+
+    /// Get balance of client bound signer.
+    ///
+    /// If client signer is [`None`], returns error [`ClientError::SignerExpect`].
+    pub async fn balance(&self) -> anyhow::Result<U256> {
+        let mut signer = self
+            .signer
+            .clone()
+            .ok_or(ClientError::SignerExpect("balance".to_owned()))?;
+
+        let address = signer.address().await?;
+
+        Ok(self.provider.clone().eth_get_balance(address).await?)
     }
 }
