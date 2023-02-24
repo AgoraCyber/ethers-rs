@@ -63,7 +63,7 @@ impl<const BITS: usize> Display for Uint<BITS> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let lead_zeros = self.0.iter().take_while(|c| **c == 0).count();
 
-        write!(f, "{}", (&self.0[lead_zeros..]).to_eth_hex())
+        write!(f, "{}", (&self.0[lead_zeros..]).to_eth_value_hex())
     }
 }
 

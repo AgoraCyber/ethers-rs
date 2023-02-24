@@ -69,9 +69,9 @@ impl<const BITS: usize> Display for Int<BITS> {
         let lead_zeros = self.0.iter().take_while(|c| **c == 0x00).count();
 
         if lead_ones > 0 {
-            write!(f, "{}", (&self.0[(lead_ones - 1)..]).to_eth_hex())
+            write!(f, "{}", (&self.0[(lead_ones - 1)..]).to_eth_value_hex())
         } else {
-            write!(f, "{}", (&self.0[lead_zeros..]).to_eth_hex())
+            write!(f, "{}", (&self.0[lead_zeros..]).to_eth_value_hex())
         }
     }
 }

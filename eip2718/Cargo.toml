@@ -21,6 +21,7 @@ sha3 = { workspace = true }
 # errors
 anyhow = { workspace = true }
 
+
 [dev-dependencies]
 pretty_env_logger = { workspace = true }
 log = { workspace = true }

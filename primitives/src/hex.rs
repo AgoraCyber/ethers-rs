@@ -8,6 +8,8 @@ pub use hex::*;
 /// Implement this trait to support serialize `type` to ethereum hex string, "0x..."
 pub trait ToEtherHex {
     fn to_eth_hex(&self) -> String;
+
+    fn to_eth_value_hex(&self) -> String;
 }
 
 impl<T: ToHex> ToEtherHex for T {
@@ -15,6 +17,15 @@ impl<T: ToHex> ToEtherHex for T {
         let hex_str = self.encode_hex::<String>();
         if hex_str.len() == 2 && hex_str.as_bytes()[0] == b'0' {
             format!("0x{}", hex_str.as_bytes()[1] as char)
+        } else {
+            format!("0x{}", hex_str)
+        }
+    }
+
+    fn to_eth_value_hex(&self) -> String {
+        let hex_str = self.encode_hex::<String>();
+        if hex_str.len() > 0 && hex_str.as_bytes()[0] == b'0' {
+            format!("0x{}", &hex_str.as_str()[1..])
         } else {
             format!("0x{}", hex_str)
         }

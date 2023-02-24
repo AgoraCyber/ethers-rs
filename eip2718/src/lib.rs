@@ -1,8 +1,6 @@
 use ethers_primitives::*;
 use serde::{Deserialize, Serialize};
 
-pub type H256 = Bytes32;
-
 macro_rules! tx_json_support {
     ($ty:ident) => {
         impl TryFrom<&str> for $ty {

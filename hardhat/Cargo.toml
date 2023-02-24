@@ -1,5 +1,5 @@
 [package]
-name = "ethers-hardhat-rs"
+name = "ethers_hardhat"
 license-file.workspace = true
 edition.workspace = true
 version.workspace = true

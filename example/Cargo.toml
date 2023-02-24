@@ -8,3 +8,10 @@ publish = ["rsproxy"]
 
 [dependencies]
 ethers_rs = { workspace = true }
+serde = { workspace = true }
+async-std = { workspace = true }
+pretty_env_logger = { workspace = true }
+log = { workspace = true }
+
+[build-dependencies]
+ethers_rs = { workspace = true }

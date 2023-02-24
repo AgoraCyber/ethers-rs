@@ -7,6 +7,8 @@ description = "An ethereum contract binding code generation framework"
 documentation = "https://docs.rs/ethers-rs"
 
 [dependencies]
+
+# internals
 serde_ethabi = { workspace = true }
 serde_eip712 = { workspace = true }
 serde_rlp = { workspace = true }
@@ -17,8 +19,14 @@ ethers_eip2718 = { workspace = true }
 ethers_wallet = { workspace = true }
 ethers_signers = { workspace = true }
 ethers_macros = { workspace = true }
+ethers_hardhat = { workspace = true }
+
+#others
+log = { workspace = true }
 serde = { workspace = true }
+serde_json = { workspace = true }
 anyhow = { workspace = true }
+thiserror = { workspace = true }
 
 [workspace]
 members = [
@@ -110,7 +118,7 @@ ethers_wallet = { path = "./wallet", version = "^0.2" }
 ethers_signers = { path = "./signers", version = "^0.2" }
 ethers_macros = { path = "./macros", version = "^0.2" }
 ethers_rs = { path = "./", version = "^0.2" }
-
+ethers_hardhat = { path = "./hardhat", version = "^0.2" }
 
 jsonrpc-rs = "^0.1"
 async-timer-rs = "^0.1"

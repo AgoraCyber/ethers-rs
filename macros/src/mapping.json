@@ -11,12 +11,10 @@
   "address": "ethers_rs::Address",
   "rt_client": "ethers_rs::Client",
   "rt_error": "ethers_rs::Error",
-  "rt_opts": "ethers_rs::Ops",
-  "rt_receipt": "ethers_rs::TransactionReceipt",
-  "rt_abi_decodable": "ethers_rs::Deserialize",
-  "rt_abi_encodable": "ethers_rs::Serialize",
-  "rt_log_decodable": "ethers_rs::Deserialize",
-  "rt_log_decoder": "ethers_rs::LogDecoder",
-  "rt_log_encodable": "ethers_rs::Serialize",
-  "rt_log_encoder": "ethers_rs::LogEncoder"
+  "rt_opts": "ethers_rs::TxOptions",
+  "rt_receipt": "ethers_rs::DefaultTransactionReceipter",
+  "rt_serialize_derive": "ethers_rs::Serialize",
+  "rt_deserialize_derive": "ethers_rs::Deserialize",
+  "rt_abi_serialize": "ethers_rs::to_abi",
+  "rt_abi_deserialize": "ethers_rs::from_abi"
 }
