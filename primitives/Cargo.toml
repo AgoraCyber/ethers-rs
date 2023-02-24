@@ -9,7 +9,7 @@ documentation = "https://docs.rs/ethers-primitives"
 
 [dependencies]
 serde_ethabi = { workspace = true }
-serde_rlp = { workspace = true }
+serde_ethrlp = { workspace = true }
 
 # serde
 serde = { workspace = true }

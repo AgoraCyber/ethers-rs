@@ -11,7 +11,7 @@ documentation = "https://docs.rs/ethers-rs"
 # internals
 serde_ethabi = { workspace = true }
 serde_eip712 = { workspace = true }
-serde_rlp = { workspace = true }
+serde_ethrlp = { workspace = true }
 ethers_primitives = { workspace = true }
 ethers_provider = { workspace = true }
 ethers_eip712 = { workspace = true }
@@ -46,7 +46,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 license-file = "LICENSE"
 keywords = ["futures-rs", "ethereum", "timeout", "jsonrpc"]
@@ -109,7 +109,7 @@ ethbloom = { version = "0.13", default-features = false }
 # internal crates
 serde_ethabi = { path = "./serde/ethabi", version = "^0.2" }
 serde_eip712 = { path = "./serde/eip712", version = "^0.2" }
-serde_rlp = { path = "./serde/rlp", version = "^0.2" }
+serde_ethrlp = { path = "./serde/rlp", version = "^0.2" }
 ethers_primitives = { path = "./primitives", version = "^0.2" }
 ethers_provider = { path = "./providers", version = "^0.2" }
 ethers_eip712 = { path = "./eip712", version = "^0.2" }

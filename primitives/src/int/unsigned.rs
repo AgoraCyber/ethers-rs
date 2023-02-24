@@ -301,8 +301,8 @@ convert_builtin_unsigned!(Uint, usize, u128, u64, u32, u16, u8);
 #[cfg(test)]
 mod tests {
     use serde_ethabi::{from_abi, to_abi};
+    use serde_ethrlp::rlp_encode;
     use serde_json::json;
-    use serde_rlp::rlp_encode;
 
     use crate::ToEtherHex;
 

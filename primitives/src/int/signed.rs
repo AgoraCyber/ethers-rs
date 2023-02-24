@@ -334,7 +334,7 @@ pub type I64 = Int<64>;
 #[cfg(test)]
 mod tests {
     use serde_ethabi::{from_abi, to_abi};
-    use serde_rlp::rlp_encode;
+    use serde_ethrlp::rlp_encode;
 
     use crate::ToEtherHex;
 

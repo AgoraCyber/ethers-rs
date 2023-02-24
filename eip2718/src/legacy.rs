@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use ethers_primitives::*;
 
-use serde_rlp::RlpEncoder;
+use serde_ethrlp::RlpEncoder;
 
 use super::{keccak256, H256};
 

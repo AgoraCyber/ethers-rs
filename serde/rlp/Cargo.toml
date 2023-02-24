@@ -1,5 +1,5 @@
 [package]
-name = "serde_rlp"
+name = "serde_ethrlp"
 license = "MIT"
 edition.workspace = true
 version.workspace = true
