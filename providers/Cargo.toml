@@ -1,5 +1,5 @@
 [package]
-name = "ethers_providers"
+name = "ethers_provider"
 license = "MIT"
 edition.workspace = true
 version.workspace = true

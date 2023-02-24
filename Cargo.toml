@@ -13,11 +13,11 @@ serde_ethabi = { workspace = true }
 serde_eip712 = { workspace = true }
 serde_rlp = { workspace = true }
 ethers_primitives = { workspace = true }
-ethers_providers = { workspace = true }
+ethers_provider = { workspace = true }
 ethers_eip712 = { workspace = true }
 ethers_eip2718 = { workspace = true }
 ethers_wallet = { workspace = true }
-ethers_signers = { workspace = true }
+ethers_signer = { workspace = true }
 ethers_macros = { workspace = true }
 ethers_hardhat = { workspace = true }
 
@@ -111,11 +111,11 @@ serde_ethabi = { path = "./serde/ethabi", version = "^0.2" }
 serde_eip712 = { path = "./serde/eip712", version = "^0.2" }
 serde_rlp = { path = "./serde/rlp", version = "^0.2" }
 ethers_primitives = { path = "./primitives", version = "^0.2" }
-ethers_providers = { path = "./providers", version = "^0.2" }
+ethers_provider = { path = "./providers", version = "^0.2" }
 ethers_eip712 = { path = "./eip712", version = "^0.2" }
 ethers_eip2718 = { path = "./eip2718", version = "^0.2" }
 ethers_wallet = { path = "./wallet", version = "^0.2" }
-ethers_signers = { path = "./signers", version = "^0.2" }
+ethers_signer = { path = "./signers", version = "^0.2" }
 ethers_macros = { path = "./macros", version = "^0.2" }
 ethers_rs = { path = "./", version = "^0.2" }
 ethers_hardhat = { path = "./hardhat", version = "^0.2" }

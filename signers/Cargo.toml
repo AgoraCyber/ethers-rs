@@ -1,5 +1,5 @@
 [package]
-name = "ethers_signers"
+name = "ethers_signer"
 license-file.workspace = true
 edition.workspace = true
 version.workspace = true

@@ -24,8 +24,8 @@ pretty_env_logger = { workspace = true }
 
 
 ethers_wallet = { workspace = true }
-ethers_providers = { workspace = true }
-ethers_signers = { workspace = true }
+ethers_provider = { workspace = true }
+ethers_signer = { workspace = true }
 ethers_primitives = { workspace = true }
 
 [dev-dependencies]

@@ -8,10 +8,10 @@ use async_process::Child;
 use async_process::Command;
 use async_process::ExitStatus;
 
-use ethers_providers::providers::http;
-use ethers_providers::Provider;
-use ethers_signers::signer::Signer;
-use ethers_signers::wallet::WalletSigner;
+use ethers_provider::providers::http;
+use ethers_provider::Provider;
+use ethers_signer::signer::Signer;
+use ethers_signer::wallet::WalletSigner;
 use ethers_wallet::{hd_wallet::bip32::DriveKey, wallet::Wallet};
 use futures::executor::block_on;
 use futures::executor::ThreadPool;
