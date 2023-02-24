@@ -41,7 +41,7 @@ members = [
     "signers",
     "hardhat",
     "macros",
-    "example",
+    # "example",
     "./",
 ]
 

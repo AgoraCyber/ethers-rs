@@ -37,8 +37,8 @@ ethers_primitives = { workspace = true }
 
 [dev-dependencies]
 pretty_env_logger = { workspace = true }
-rdbc_sqlite3 = { git = "https://github.com/linq-rs/rdbc-sqlite3.git" }
-rdbc = { git = "https://github.com/linq-rs/rdbc.git" }
+# rdbc_sqlite3 = { git = "https://github.com/linq-rs/rdbc-sqlite3.git" }
+# rdbc = { git = "https://github.com/linq-rs/rdbc.git" }
 async-std = { workspace = true }
 
 
