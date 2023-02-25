@@ -1,3 +1,6 @@
+use std::fmt::Display;
+use std::str::FromStr;
+
 pub use ethers_eip2718::*;
 pub use ethers_macros::*;
 pub use ethers_primitives::*;
@@ -289,5 +292,21 @@ impl Client {
         let address = signer.address().await?;
 
         Ok(self.provider.clone().eth_get_balance(address).await?)
+    }
+}
+
+#[derive(Debug)]
+pub struct AbiEvent(pub ethbind::json::Event);
+
+impl FromStr for AbiEvent {
+    type Err = serde_json::Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        serde_json::from_str(s).map(|v| Self(v))
+    }
+}
+
+impl Display for AbiEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", serde_json::to_string(&self.0).unwrap())
     }
 }

@@ -75,4 +75,18 @@ mod tests {
 
         assert_eq!(to, 140u128.into());
     }
+
+    #[async_std::test]
+    async fn test_event() {
+        _ = pretty_env_logger::try_init();
+
+        let event_abi: AbiEvent = ExampleWithdrawal::abi_json().parse().unwrap();
+
+        assert_eq!(event_abi.0.anonymous, false);
+        assert_eq!(event_abi.0.name, "Withdrawal");
+        assert_eq!(event_abi.0.inputs[0].name, "amount");
+        assert_eq!(event_abi.0.inputs[1].name, "when");
+
+        log::debug!("{}", event_abi);
+    }
 }

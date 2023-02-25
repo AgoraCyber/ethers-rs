@@ -20,6 +20,7 @@ ethers_wallet = { workspace = true }
 ethers_signer = { workspace = true }
 ethers_macros = { workspace = true }
 ethers_hardhat = { workspace = true }
+ethbind = { workspace = true }
 
 #others
 log = { workspace = true }
