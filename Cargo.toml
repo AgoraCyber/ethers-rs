@@ -2,7 +2,7 @@
 name = "ethers-rs"
 license-file.workspace = true
 edition.workspace = true
-version.workspace = true
+version = "0.2.3"
 description = "An ethereum contract binding code generation framework"
 documentation = "https://docs.rs/ethers-rs"
 
